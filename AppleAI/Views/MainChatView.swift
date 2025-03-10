@@ -22,7 +22,7 @@ struct MainChatView: View {
         VStack(spacing: 0) {
             // Top bar with model selector
             HStack {
-                Text("AI Tools Hub")
+                Text("Apple AI")
                     .font(.headline)
                     .foregroundColor(.primary)
                 
@@ -71,9 +71,9 @@ struct MainChatView: View {
             .padding(.vertical, 8)
             .background(selectedService.color)
             
-            // Web view for the selected service
-            AIWebView(url: selectedService.url, service: selectedService, isLoading: $isLoading)
-                .id(selectedService.id) // Force view recreation when service changes
+            // Web view for the selected service - use PersistentWebView instead
+            PersistentWebView(service: selectedService, isLoading: $isLoading)
+                // Remove the .id modifier to preserve WebView state
         }
     }
 }

@@ -93,7 +93,7 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         
         // Open main window
         let openItem = NSMenuItem(
-            title: "Open AppleAI",
+            title: "Open Apple AI",
             action: #selector(togglePopupWindow),
             keyEquivalent: "o"
         )
@@ -172,6 +172,7 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     }
     
     private func closePopupWindow() {
+        // Just hide the window rather than closing it
         popupWindow?.orderOut(nil)
     }
     
@@ -194,19 +195,18 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             return
         }
         
-        // Create a new popup window
+        // Create a new popup window with only titlebar and close button
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
-            styleMask: [.borderless, .titled, .resizable],
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         
         // Configure the window
-        window.isOpaque = false
-        window.backgroundColor = NSColor.clear
-        window.hasShadow = true
-        window.level = .floating
+        window.title = "Apple AI"
+        window.isReleasedWhenClosed = false // Important: Don't release window when closed
+        window.level = .normal
         
         // Enable keyboard event handling
         window.acceptsMouseMovedEvents = true
@@ -216,6 +216,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         window.initialFirstResponder = nil // Let SwiftUI handle first responder
         window.allowsToolTipsWhenApplicationIsInactive = true
         window.hidesOnDeactivate = false
+        
+        // Set the window delegate to handle close button
+        window.delegate = self
         
         // Set the content view to our CompactChatView
         let contentView = CompactChatView(closeAction: { [weak self] in
@@ -271,19 +274,18 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     private func openPopupWindowWithService(_ service: AIService) {
         // If window doesn't exist, create it with the specific service
         if popupWindow == nil {
-            // Create a new popup window
+            // Create a new popup window with only titlebar and close button
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
-                styleMask: [.borderless, .titled, .resizable],
+                styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
             )
             
             // Configure the window
-            window.isOpaque = false
-            window.backgroundColor = NSColor.clear
-            window.hasShadow = true
-            window.level = .floating
+            window.title = "Apple AI"
+            window.isReleasedWhenClosed = false // Important: Don't release window when closed
+            window.level = .normal
             
             // Enable keyboard event handling
             window.acceptsMouseMovedEvents = true
@@ -293,6 +295,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             window.initialFirstResponder = nil // Let SwiftUI handle first responder
             window.allowsToolTipsWhenApplicationIsInactive = true
             window.hidesOnDeactivate = false
+            
+            // Set the window delegate to handle close button
+            window.delegate = self
             
             // Set the content view to our CompactChatView with the specific service
             let contentView = CompactChatView(
@@ -445,12 +450,26 @@ extension MenuBarManager: NSWindowDelegate {
     
     // Return false to prevent normal window closing behavior for preferences
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if sender == preferencesWindow {
-            // Instead of closing and potentially releasing the window,
-            // we'll just hide it and handle it ourselves
-            sender.orderOut(nil)
-            return false // Prevent standard close behavior
+        // Instead of closing, just hide the window
+        closePopupWindow()
+        return false // Return false to prevent standard close behavior
+    }
+    
+    // Prevent window minimization
+    func windowShouldMiniaturize(_ sender: NSWindow) -> Bool {
+        // Always prevent minimization of our popup window
+        if sender == popupWindow {
+            return false
         }
-        return true // For other windows, allow normal closing
+        return true // Allow minimization for other windows
+    }
+    
+    // Prevent window zoom (maximize)
+    func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> Bool {
+        // Always prevent zoom for our popup window
+        if window == popupWindow {
+            return false
+        }
+        return true // Allow zoom for other windows
     }
 } 

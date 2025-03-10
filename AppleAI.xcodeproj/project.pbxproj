@@ -7,39 +7,43 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8A1234561234567800000001 /* AIToolsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000002 /* AIToolsApp.swift */; };
-		8A1234561234567800000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000004 /* Assets.xcassets */; };
-		8A1234561234567800000005 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000006 /* AIService.swift */; };
-		8A1234561234567800000007 /* AIWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000008 /* AIWebView.swift */; };
-		8A1234561234567800000009 /* MainChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000010 /* MainChatView.swift */; };
-		8A1234561234567800000011 /* MenuBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000012 /* MenuBarManager.swift */; };
-		8A1234561234567800000013 /* KeyboardShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000014 /* KeyboardShortcutManager.swift */; };
-		8A1234561234567800000100 /* CompactChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000101 /* CompactChatView.swift */; };
-		8A1234561234567800000102 /* MultiTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000103 /* MultiTabView.swift */; };
-		8A1234561234567800000104 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000105 /* PreferencesView.swift */; };
-		8A1234561234567800000106 /* ShortcutRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000107 /* ShortcutRecorder.swift */; };
-		8A1234561234567800000108 /* PreferencesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000109 /* PreferencesManager.swift */; };
+		6A1001F22B9CCE9900057C36 /* AIToolsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1001F12B9CCE9900057C36 /* AIToolsApp.swift */; };
+		6A1001F92B9CCE9A00057C36 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A1001F82B9CCE9A00057C36 /* Preview Assets.xcassets */; };
+		6A10020A2B9CD2DE00057C36 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002092B9CD2DE00057C36 /* AIService.swift */; };
+		6A10020C2B9CD3B800057C36 /* AIWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A10020B2B9CD3B800057C36 /* AIWebView.swift */; };
+		6A10020E2B9CD3EF00057C36 /* MainChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A10020D2B9CD3EF00057C36 /* MainChatView.swift */; };
+		6A1002102B9CD41E00057C36 /* MenuBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A10020F2B9CD41E00057C36 /* MenuBarManager.swift */; };
+		6A1002122B9CD44200057C36 /* KeyboardShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002112B9CD44200057C36 /* KeyboardShortcutManager.swift */; };
+		6A1002142B9CD46300057C36 /* CompactChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002132B9CD46300057C36 /* CompactChatView.swift */; };
+		6A1002162B9CD48300057C36 /* MultiTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002152B9CD48300057C36 /* MultiTabView.swift */; };
+		6A1002182B9CD4A000057C36 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002172B9CD4A000057C36 /* PreferencesView.swift */; };
+		6A10021A2B9CD4BE00057C36 /* ShortcutRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A1002192B9CD4BE00057C36 /* ShortcutRecorder.swift */; };
+		6A10021C2B9CD4D500057C36 /* PreferencesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A10021B2B9CD4D500057C36 /* PreferencesManager.swift */; };
+		6A10021E2B9CD4FA00057C36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A10021D2B9CD4FA00057C36 /* Assets.xcassets */; };
+		6A1002202B9CD51F00057C36 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 6A10021F2B9CD51F00057C36 /* Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		8A1234561234567800000015 /* AppleAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppleAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8A1234561234567800000002 /* AIToolsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIToolsApp.swift; sourceTree = "<group>"; };
-		8A1234561234567800000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		8A1234561234567800000006 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
-		8A1234561234567800000008 /* AIWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWebView.swift; sourceTree = "<group>"; };
-		8A1234561234567800000010 /* MainChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainChatView.swift; sourceTree = "<group>"; };
-		8A1234561234567800000012 /* MenuBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarManager.swift; sourceTree = "<group>"; };
-		8A1234561234567800000014 /* KeyboardShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutManager.swift; sourceTree = "<group>"; };
-		8A1234561234567800000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		8A1234561234567800000101 /* CompactChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactChatView.swift; sourceTree = "<group>"; };
-		8A1234561234567800000103 /* MultiTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabView.swift; sourceTree = "<group>"; };
-		8A1234561234567800000105 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
-		8A1234561234567800000107 /* ShortcutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorder.swift; sourceTree = "<group>"; };
-		8A1234561234567800000109 /* PreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesManager.swift; sourceTree = "<group>"; };
+		6A1001EE2B9CCE9900057C36 /* AppleAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppleAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A1001F12B9CCE9900057C36 /* AIToolsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIToolsApp.swift; sourceTree = "<group>"; };
+		6A1001F82B9CCE9A00057C36 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		6A1001FA2B9CCE9A00057C36 /* AppleAI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppleAI.entitlements; sourceTree = "<group>"; };
+		6A1002092B9CD2DE00057C36 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		6A10020B2B9CD3B800057C36 /* AIWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWebView.swift; sourceTree = "<group>"; };
+		6A10020D2B9CD3EF00057C36 /* MainChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainChatView.swift; sourceTree = "<group>"; };
+		6A10020F2B9CD41E00057C36 /* MenuBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarManager.swift; sourceTree = "<group>"; };
+		6A1002112B9CD44200057C36 /* KeyboardShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutManager.swift; sourceTree = "<group>"; };
+		6A1002132B9CD46300057C36 /* CompactChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactChatView.swift; sourceTree = "<group>"; };
+		6A1002152B9CD48300057C36 /* MultiTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabView.swift; sourceTree = "<group>"; };
+		6A1002172B9CD4A000057C36 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		6A1002192B9CD4BE00057C36 /* ShortcutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorder.swift; sourceTree = "<group>"; };
+		6A10021B2B9CD4D500057C36 /* PreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesManager.swift; sourceTree = "<group>"; };
+		6A10021D2B9CD4FA00057C36 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6A10021F2B9CD51F00057C36 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		8A1234561234567800000017 /* Frameworks */ = {
+		6A1001EB2B9CCE9900057C36 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -49,121 +53,112 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		8A1234561234567800000018 = {
+		6A1001E52B9CCE9900057C36 = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000019 /* AppleAI */,
-				8A1234561234567800000020 /* Products */,
+				6A1001F02B9CCE9900057C36 /* AppleAI */,
+				6A1001EF2B9CCE9900057C36 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		8A20Group = {
+		6A1001EF2B9CCE9900057C36 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000001 /* AIToolsApp.swift in Sources */,
-				8A1234561234567800000003 /* Assets.xcassets in Resources */,
-				8A1234561234567800000005 /* AIService.swift in Sources */,
-				8A1234561234567800000007 /* AIWebView.swift in Sources */,
-				8A1234561234567800000009 /* MainChatView.swift in Sources */,
-				8A1234561234567800000011 /* MenuBarManager.swift in Sources */,
-				8A1234561234567800000013 /* KeyboardShortcutManager.swift in Sources */,
-				8A1234561234567800000100 /* CompactChatView.swift in Sources */,
-				8A1234561234567800000102 /* MultiTabView.swift in Sources */,
-				8A1234561234567800000104 /* PreferencesView.swift in Sources */,
-				8A1234561234567800000106 /* ShortcutRecorder.swift in Sources */,
-				8A1234561234567800000108 /* PreferencesManager.swift in Sources */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		8A1234561234567800000020 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				8A1234561234567800000015 /* AppleAI.app */,
+				6A1001EE2B9CCE9900057C36 /* AppleAI.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8A1234561234567800000019 /* AppleAI */ = {
+		6A1001F02B9CCE9900057C36 /* AppleAI */ = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000002 /* AIToolsApp.swift */,
-				8A1234561234567800000021 /* Models */,
-				8A1234561234567800000022 /* Views */,
-				8A1234561234567800000023 /* Managers */,
-				8A1234561234567800000004 /* Assets.xcassets */,
-				8A1234561234567800000016 /* Info.plist */,
+				6A1001F12B9CCE9900057C36 /* AIToolsApp.swift */,
+				6A1002082B9CD2C200057C36 /* Models */,
+				6A1002072B9CD2B900057C36 /* Views */,
+				6A1002062B9CD2B100057C36 /* Managers */,
+				6A10021D2B9CD4FA00057C36 /* Assets.xcassets */,
+				6A10021F2B9CD51F00057C36 /* Info.plist */,
+				6A1001FA2B9CCE9A00057C36 /* AppleAI.entitlements */,
+				6A1001F72B9CCE9A00057C36 /* Preview Content */,
 			);
 			path = AppleAI;
 			sourceTree = "<group>";
 		};
-		8A1234561234567800000021 /* Models */ = {
+		6A1001F72B9CCE9A00057C36 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000006 /* AIService.swift */,
+				6A1001F82B9CCE9A00057C36 /* Preview Assets.xcassets */,
 			);
-			path = Models;
+			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		8A1234561234567800000022 /* Views */ = {
+		6A1002062B9CD2B100057C36 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000008 /* AIWebView.swift */,
-				8A1234561234567800000010 /* MainChatView.swift */,
-				8A1234561234567800000101 /* CompactChatView.swift */,
-				8A1234561234567800000103 /* MultiTabView.swift */,
-				8A1234561234567800000105 /* PreferencesView.swift */,
-				8A1234561234567800000107 /* ShortcutRecorder.swift */,
+				6A10020F2B9CD41E00057C36 /* MenuBarManager.swift */,
+				6A1002112B9CD44200057C36 /* KeyboardShortcutManager.swift */,
+				6A10021B2B9CD4D500057C36 /* PreferencesManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		6A1002072B9CD2B900057C36 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				6A10020B2B9CD3B800057C36 /* AIWebView.swift */,
+				6A10020D2B9CD3EF00057C36 /* MainChatView.swift */,
+				6A1002132B9CD46300057C36 /* CompactChatView.swift */,
+				6A1002152B9CD48300057C36 /* MultiTabView.swift */,
+				6A1002172B9CD4A000057C36 /* PreferencesView.swift */,
+				6A1002192B9CD4BE00057C36 /* ShortcutRecorder.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		8A1234561234567800000023 /* Managers */ = {
+		6A1002082B9CD2C200057C36 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				8A1234561234567800000012 /* MenuBarManager.swift */,
-				8A1234561234567800000014 /* KeyboardShortcutManager.swift */,
-				8A1234561234567800000109 /* PreferencesManager.swift */,
+				6A1002092B9CD2DE00057C36 /* AIService.swift */,
 			);
-			path = Managers;
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8A1234561234567800000024 /* AIToolsHub */ = {
+		6A1001ED2B9CCE9900057C36 /* AIToolsHub */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8A1234561234567800000025 /* Build configuration list for PBXNativeTarget "AIToolsHub" */;
+			buildConfigurationList = 6A1001FD2B9CCE9A00057C36 /* Build configuration list for PBXNativeTarget "AIToolsHub" */;
 			buildPhases = (
-				8A1234561234567800000017 /* Frameworks */,
-				8A1234561234567800000026 /* Sources */,
-				8A1234561234567800000027 /* Resources */,
+				6A1001EA2B9CCE9900057C36 /* Sources */,
+				6A1001EB2B9CCE9900057C36 /* Frameworks */,
+				6A1001EC2B9CCE9900057C36 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = AIToolsHub;
-			productName = AIToolsHub;
-			productReference = 8A1234561234567800000015 /* AppleAI.app */;
+			productName = AppleAI;
+			productReference = 6A1001EE2B9CCE9900057C36 /* AppleAI.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		8A1234561234567800000028 /* Project object */ = {
+		6A1001E62B9CCE9900057C36 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
 				TargetAttributes = {
-					8A1234561234567800000024 = {
-						CreatedOnToolsVersion = 15.0;
+					6A1001ED2B9CCE9900057C36 = {
+						CreatedOnToolsVersion = 15.2;
 					};
 				};
 			};
-			buildConfigurationList = 8A1234561234567800000029 /* Build configuration list for PBXProject "AppleAI" */;
+			buildConfigurationList = 6A1001E92B9CCE9900057C36 /* Build configuration list for PBXProject "AppleAI" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -171,50 +166,52 @@
 				en,
 				Base,
 			);
-			mainGroup = 8A1234561234567800000018;
-			productRefGroup = 8A1234561234567800000020 /* Products */;
+			mainGroup = 6A1001E52B9CCE9900057C36;
+			productRefGroup = 6A1001EF2B9CCE9900057C36 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8A1234561234567800000024 /* AIToolsHub */,
+				6A1001ED2B9CCE9900057C36 /* AIToolsHub */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8A1234561234567800000027 /* Resources */ = {
+		6A1001EC2B9CCE9900057C36 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8A1234561234567800000003 /* Assets.xcassets in Resources */,
+				6A1002202B9CD51F00057C36 /* Info.plist in Resources */,
+				6A1001F92B9CCE9A00057C36 /* Preview Assets.xcassets in Resources */,
+				6A10021E2B9CD4FA00057C36 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		8A1234561234567800000026 /* Sources */ = {
+		6A1001EA2B9CCE9900057C36 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8A1234561234567800000001 /* AIToolsApp.swift in Sources */,
-				8A1234561234567800000005 /* AIService.swift in Sources */,
-				8A1234561234567800000007 /* AIWebView.swift in Sources */,
-				8A1234561234567800000009 /* MainChatView.swift in Sources */,
-				8A1234561234567800000011 /* MenuBarManager.swift in Sources */,
-				8A1234561234567800000013 /* KeyboardShortcutManager.swift in Sources */,
-				8A1234561234567800000100 /* CompactChatView.swift in Sources */,
-				8A1234561234567800000102 /* MultiTabView.swift in Sources */,
-				8A1234561234567800000104 /* PreferencesView.swift in Sources */,
-				8A1234561234567800000106 /* ShortcutRecorder.swift in Sources */,
-				8A1234561234567800000108 /* PreferencesManager.swift in Sources */,
+				6A10020C2B9CD3B800057C36 /* AIWebView.swift in Sources */,
+				6A1002102B9CD41E00057C36 /* MenuBarManager.swift in Sources */,
+				6A10020A2B9CD2DE00057C36 /* AIService.swift in Sources */,
+				6A1002122B9CD44200057C36 /* KeyboardShortcutManager.swift in Sources */,
+				6A1002162B9CD48300057C36 /* MultiTabView.swift in Sources */,
+				6A1002142B9CD46300057C36 /* CompactChatView.swift in Sources */,
+				6A10020E2B9CD3EF00057C36 /* MainChatView.swift in Sources */,
+				6A10021C2B9CD4D500057C36 /* PreferencesManager.swift in Sources */,
+				6A1002182B9CD4A000057C36 /* PreferencesView.swift in Sources */,
+				6A10021A2B9CD4BE00057C36 /* ShortcutRecorder.swift in Sources */,
+				6A1001F22B9CCE9900057C36 /* AIToolsApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		8A1234561234567800000030 /* Debug */ = {
+		6A1001FB2B9CCE9A00057C36 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -277,7 +274,7 @@
 			};
 			name = Debug;
 		};
-		8A1234561234567800000031 /* Release */ = {
+		6A1001FC2B9CCE9A00057C36 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -332,51 +329,57 @@
 			};
 			name = Release;
 		};
-		8A1234561234567800000032 /* Debug */ = {
+		6A1001FE2B9CCE9A00057C36 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppleAI/AppleAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AppleAI/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AppleAI/Info.plist;
-				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macxyai.AppleAI;
-				PRODUCT_NAME = AppleAI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		8A1234561234567800000033 /* Release */ = {
+		6A1001FF2B9CCE9A00057C36 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AppleAI/AppleAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"AppleAI/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AppleAI/Info.plist;
-				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macxyai.AppleAI;
-				PRODUCT_NAME = AppleAI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -385,25 +388,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		8A1234561234567800000029 /* Build configuration list for PBXProject "AppleAI" */ = {
+		6A1001E92B9CCE9900057C36 /* Build configuration list for PBXProject "AppleAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8A1234561234567800000030 /* Debug */,
-				8A1234561234567800000031 /* Release */,
+				6A1001FB2B9CCE9A00057C36 /* Debug */,
+				6A1001FC2B9CCE9A00057C36 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8A1234561234567800000025 /* Build configuration list for PBXNativeTarget "AIToolsHub" */ = {
+		6A1001FD2B9CCE9A00057C36 /* Build configuration list for PBXNativeTarget "AIToolsHub" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8A1234561234567800000032 /* Debug */,
-				8A1234561234567800000033 /* Release */,
+				6A1001FE2B9CCE9A00057C36 /* Debug */,
+				6A1001FF2B9CCE9A00057C36 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 8A1234561234567800000028 /* Project object */;
-} 
+	rootObject = 6A1001E62B9CCE9900057C36 /* Project object */;
+}

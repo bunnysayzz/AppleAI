@@ -58,7 +58,7 @@ if [ $? -eq 0 ]; then
         echo ""
         
         # Copy the app to the current directory for easy access
-        APP_NAME=$(basename "$APP_PATH")
+        APP_NAME="Apple AI.app"
         cp -R "$APP_PATH" "./$APP_NAME"
         echo "A copy of the app has been placed in the current directory: ./$APP_NAME"
         

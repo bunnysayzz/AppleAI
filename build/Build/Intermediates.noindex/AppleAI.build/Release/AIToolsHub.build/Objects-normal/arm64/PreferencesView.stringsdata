@@ -1,0 +1,40 @@
+{
+  "source": "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/PreferencesView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Preferences",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 8
+        }
+      },
+      {
+        "comment": "",
+        "key": "Open at Login",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Reset to Default",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 26
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keyboard Shortcuts",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 17
+        }
+      }
+    ]
+  },
+  "version": 1
+}

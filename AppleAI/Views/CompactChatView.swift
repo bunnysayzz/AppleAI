@@ -50,24 +50,6 @@ struct CompactChatView: View {
                 .frame(height: 40)
                 
                 Spacer()
-                
-                // Loading indicator
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(0.6)
-                        .frame(width: 16, height: 16)
-                        .padding(.horizontal, 4)
-                }
-                
-                // Close button
-                Button(action: closeAction) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 14))
-                }
-                .buttonStyle(BorderlessButtonStyle()) // More responsive than PlainButtonStyle
-                .padding(.horizontal, 6)
             }
             .padding(.vertical, 6)
             .background(Color(NSColor.windowBackgroundColor))
@@ -78,8 +60,7 @@ struct CompactChatView: View {
                 .foregroundColor(selectedService.color)
             
             // Web view for the selected service with focus handling
-            AIWebView(url: selectedService.url, service: selectedService, isLoading: $isLoading)
-                .id(selectedService.id) // Force view recreation when service changes
+            PersistentWebView(service: selectedService, isLoading: $isLoading)
                 .background(KeyboardFocusModifier(onAppear: {
                     // When web view appears, set up a delayed action to focus the view
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -88,12 +69,6 @@ struct CompactChatView: View {
                 }))
         }
         .frame(width: 400, height: 600)
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
         .onAppear {
             // Set up periodic focus checks
             setupPeriodicFocusCheck()

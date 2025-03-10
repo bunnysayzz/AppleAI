@@ -28,7 +28,6 @@ struct MultiTabView: View {
             // Content area
             WebViewWindow(service: selectedService)
                 .transition(.opacity)
-                .id(selectedService.id) // Force view recreation when service changes
         }
     }
 }
