@@ -61,6 +61,18 @@ struct MainChatView: View {
                 
                 Spacer()
                 
+                // Add file upload button
+                Button(action: {
+                    WebViewCache.shared.triggerFileUpload(for: selectedService)
+                }) {
+                    Image(systemName: "paperclip")
+                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .padding(.trailing, 8)
+                .help("Attach files")
+                
                 if isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))

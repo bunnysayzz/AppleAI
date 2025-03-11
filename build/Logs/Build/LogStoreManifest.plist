@@ -6,7 +6,7 @@
 	<integer>11</integer>
 	<key>logs</key>
 	<dict>
-		<key>C5249C98-3AA5-4E9A-A513-BC6EB83032C5</key>
+		<key>A8CC5CD4-ADF3-4B94-BA73-F501E56A6812</key>
 		<dict>
 			<key>className</key>
 			<string>IDECommandLineBuildLog</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
 			<key>fileName</key>
-			<string>C5249C98-3AA5-4E9A-A513-BC6EB83032C5.xcactivitylog</string>
+			<string>A8CC5CD4-ADF3-4B94-BA73-F501E56A6812.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -29,7 +29,7 @@
 				<key>totalNumberOfTestFailures</key>
 				<integer>0</integer>
 				<key>totalNumberOfWarnings</key>
-				<integer>12</integer>
+				<integer>13</integer>
 			</dict>
 			<key>schemeIdentifier-containerName</key>
 			<string>AppleAI project</string>
@@ -40,13 +40,13 @@
 			<key>signature</key>
 			<string>Building project AppleAI with scheme AIToolsHub and configuration Release</string>
 			<key>timeStartedRecording</key>
-			<real>763320932.52400303</real>
+			<real>763383367.41925895</real>
 			<key>timeStoppedRecording</key>
-			<real>763320943.50135899</real>
+			<real>763383376.75360596</real>
 			<key>title</key>
 			<string>Building project AppleAI with scheme AIToolsHub and configuration Release</string>
 			<key>uniqueIdentifier</key>
-			<string>C5249C98-3AA5-4E9A-A513-BC6EB83032C5</string>
+			<string>A8CC5CD4-ADF3-4B94-BA73-F501E56A6812</string>
 		</dict>
 	</dict>
 </dict>

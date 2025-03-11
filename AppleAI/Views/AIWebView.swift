@@ -10,6 +10,9 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
     @Published var loadingStates: [UUID: Bool] = [:]
     private var chatGPTTimers: [WKWebView: Timer] = [:] // Track timers to avoid duplicates
     
+    // Track when a file picker is active to prevent window hiding
+    @Published var isFilePickerActive: Bool = false
+    
     override private init() {
         super.init()
         // Preload all service webviews on initialization
@@ -228,6 +231,171 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
         alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Cancel")
         completionHandler(alert.runModal() == .alertFirstButtonReturn)
+    }
+    
+    // Add support for file uploads
+    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = parameters.allowsDirectories
+        openPanel.allowsMultipleSelection = parameters.allowsMultipleSelection
+        
+        // Set file picker as active
+        isFilePickerActive = true
+        
+        // Check file type filtering if available, but skip for older macOS versions
+        if #available(macOS 11.0, *) {
+            // Check if there's a way to get allowed file types
+            // We can't use allowedContentTypes or allowsAllTypes directly
+        }
+        
+        openPanel.begin { [weak self] (result) in
+            // Reset file picker active state
+            self?.isFilePickerActive = false
+            
+            if result == .OK {
+                completionHandler(openPanel.urls)
+            } else {
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    // Function to manually trigger file upload for any service
+    func triggerFileUpload(for service: AIService) {
+        guard let webView = webViews[service.id] else { return }
+        
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = false
+        openPanel.allowsMultipleSelection = true
+        openPanel.message = "Select files to upload"
+        openPanel.prompt = "Upload"
+        
+        // Set file picker as active
+        isFilePickerActive = true
+        
+        openPanel.begin { [weak self] (result) in
+            guard let self = self else { return }
+            
+            // Reset file picker active state
+            self.isFilePickerActive = false
+            
+            if result == .OK {
+                let urls = openPanel.urls
+                
+                // Focus the webView first
+                if let window = webView.window {
+                    window.makeFirstResponder(webView)
+                }
+                
+                // Find the appropriate file input in the webView and simulate a file selection
+                // This script tries to find a file input and click it to trigger file selection UI
+                // If the website has a custom file upload button, we need to click it
+                let findAndClickFileInputScript = """
+                (function() {
+                    // Try to find visible file input
+                    let fileInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+                    let visibleInput = fileInputs.find(input => {
+                        let style = window.getComputedStyle(input);
+                        return style.display !== 'none' && style.visibility !== 'hidden' && input.offsetWidth > 0;
+                    });
+                    
+                    if (visibleInput) {
+                        visibleInput.click();
+                        return true;
+                    }
+                    
+                    // Try to find file upload buttons
+                    let uploadButtons = [];
+                    
+                    // ChatGPT
+                    let chatgptButton = document.querySelector('button[aria-label="Attach files"]');
+                    if (chatgptButton) {
+                        uploadButtons.push(chatgptButton);
+                    }
+                    
+                    // Claude
+                    let claudeButton = document.querySelector('button[aria-label="Upload file"]');
+                    if (claudeButton) {
+                        uploadButtons.push(claudeButton);
+                    }
+                    
+                    // Generic approach - look for buttons with upload-related text
+                    const uploadKeywords = ['upload', 'file', 'attach', 'paperclip'];
+                    document.querySelectorAll('button, a, div, span, i').forEach(element => {
+                        const text = element.textContent?.toLowerCase() || '';
+                        const ariaLabel = element.getAttribute('aria-label')?.toLowerCase() || '';
+                        const classNames = element.className.toLowerCase();
+                        
+                        // Check if element or its children have upload-related info
+                        const hasUploadKeyword = uploadKeywords.some(keyword => 
+                            text.includes(keyword) || ariaLabel.includes(keyword) || classNames.includes(keyword)
+                        );
+                        
+                        // Check for paperclip icons
+                        const hasPaperclipIcon = element.querySelector('svg, img, i')?.className?.toLowerCase()?.includes('paperclip');
+                        
+                        if (hasUploadKeyword || hasPaperclipIcon) {
+                            uploadButtons.push(element);
+                        }
+                    });
+                    
+                    if (uploadButtons.length > 0) {
+                        uploadButtons[0].click();
+                        return true;
+                    }
+                    
+                    return false;
+                })();
+                """
+                
+                webView.evaluateJavaScript(findAndClickFileInputScript) { (result, error) in
+                    if let success = result as? Bool, success {
+                        print("Successfully clicked file input or upload button")
+                    } else {
+                        print("Could not find file input or upload button. Adding manual file upload support.")
+                        
+                        // If we couldn't find a proper file input, try to create one and simulate the file selection
+                        let simulateFileUploadScript = """
+                        (function() {
+                            // Create a temporary file input if none found
+                            const fileInput = document.createElement('input');
+                            fileInput.type = 'file';
+                            fileInput.multiple = true;
+                            fileInput.style.display = 'none';
+                            document.body.appendChild(fileInput);
+                            
+                            // Store references to important elements that we might need later
+                            window.appleAITempFileInput = fileInput;
+                            
+                            // When files are selected, we'll try to handle them appropriately
+                            fileInput.addEventListener('change', function() {
+                                console.log('Files selected!', fileInput.files);
+                                // We'll rely on the browser's file upload handling
+                                
+                                // Remove the element after use
+                                setTimeout(() => {
+                                    document.body.removeChild(fileInput);
+                                    delete window.appleAITempFileInput;
+                                }, 1000);
+                            });
+                            
+                            // Trigger file selection dialog
+                            fileInput.click();
+                            return true;
+                        })();
+                        """
+                        
+                        webView.evaluateJavaScript(simulateFileUploadScript) { (result, error) in
+                            if error != nil {
+                                print("Error simulating file upload: \(error!)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

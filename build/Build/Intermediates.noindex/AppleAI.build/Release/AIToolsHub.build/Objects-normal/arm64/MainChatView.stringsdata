@@ -17,6 +17,14 @@
           "startingColumn": 24,
           "startingLine": 32
         }
+      },
+      {
+        "comment": "",
+        "key": "Attach files",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 74
+        }
       }
     ]
   },

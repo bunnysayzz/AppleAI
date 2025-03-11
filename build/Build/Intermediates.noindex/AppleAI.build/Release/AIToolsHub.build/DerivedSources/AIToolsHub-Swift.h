@@ -361,6 +361,8 @@ SWIFT_CLASS("_TtC10AIToolsHub12RecorderView")
 @class WKNavigation;
 @class NSString;
 @class WKFrameInfo;
+@class WKOpenPanelParameters;
+@class NSURL;
 
 SWIFT_CLASS("_TtC10AIToolsHub12WebViewCache")
 @interface WebViewCache : NSObject <WKNavigationDelegate, WKUIDelegate>
@@ -371,6 +373,7 @@ SWIFT_CLASS("_TtC10AIToolsHub12WebViewCache")
 - (void)webView:(WKWebView * _Nonnull)webView didFailNavigation:(WKNavigation * _Null_unspecified)navigation withError:(NSError * _Nonnull)error;
 - (void)webView:(WKWebView * _Nonnull)webView runJavaScriptAlertPanelWithMessage:(NSString * _Nonnull)message initiatedByFrame:(WKFrameInfo * _Nonnull)frame completionHandler:(void (^ _Nonnull)(void))completionHandler;
 - (void)webView:(WKWebView * _Nonnull)webView runJavaScriptConfirmPanelWithMessage:(NSString * _Nonnull)message initiatedByFrame:(WKFrameInfo * _Nonnull)frame completionHandler:(void (^ _Nonnull)(BOOL))completionHandler;
+- (void)webView:(WKWebView * _Nonnull)webView runOpenPanelWithParameters:(WKOpenPanelParameters * _Nonnull)parameters initiatedByFrame:(WKFrameInfo * _Nonnull)frame completionHandler:(void (^ _Nonnull)(NSArray<NSURL *> * _Nullable))completionHandler;
 @end
 
 

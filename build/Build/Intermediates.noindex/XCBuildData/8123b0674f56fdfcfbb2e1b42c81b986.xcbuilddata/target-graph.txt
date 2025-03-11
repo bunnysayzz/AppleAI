@@ -1,0 +1,2 @@
+Target dependency graph (1 target)
+Target 'AIToolsHub' in project 'AppleAI' (no dependencies)

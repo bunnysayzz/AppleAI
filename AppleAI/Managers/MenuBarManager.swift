@@ -53,6 +53,11 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             
             // Check if the click is outside the window
             if window.isVisible {
+                // Don't hide the window if a file picker is active
+                if WebViewCache.shared.isFilePickerActive {
+                    return
+                }
+                
                 let mouseLocation = NSEvent.mouseLocation
                 let windowFrame = window.frame
                 
@@ -208,6 +213,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         window.isReleasedWhenClosed = false // Important: Don't release window when closed
         window.level = .normal
         
+        // Set collection behavior to ensure it appears on current space
+        window.collectionBehavior = [.moveToActiveSpace, .transient]
+        
         // Enable keyboard event handling
         window.acceptsMouseMovedEvents = true
         window.isMovable = true
@@ -287,6 +295,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             window.isReleasedWhenClosed = false // Important: Don't release window when closed
             window.level = .normal
             
+            // Set collection behavior to ensure it appears on current space
+            window.collectionBehavior = [.moveToActiveSpace, .transient]
+            
             // Enable keyboard event handling
             window.acceptsMouseMovedEvents = true
             window.isMovable = true
@@ -341,6 +352,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     }
     
     private func positionAndShowPopupWindow(_ window: NSWindow) {
+        // Ensure the window appears on the active space
+        window.collectionBehavior = [.moveToActiveSpace, .transient]
+        
         // Position the window below the status item
         if let button = statusItem.button {
             let buttonRect = button.convert(button.bounds, to: nil)
@@ -450,9 +464,19 @@ extension MenuBarManager: NSWindowDelegate {
     
     // Return false to prevent normal window closing behavior for preferences
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        // Instead of closing, just hide the window
-        closePopupWindow()
-        return false // Return false to prevent standard close behavior
+        // Handle each window type differently
+        if sender == popupWindow {
+            // For the main popup window, just hide it
+            closePopupWindow()
+            return false // Prevent standard close behavior
+        } else if sender == preferencesWindow {
+            // For the preferences window, hide it but allow the close action
+            preferencesWindow?.orderOut(nil)
+            return false // Prevent standard close behavior but still hide
+        }
+        
+        // Allow normal closing for any other windows
+        return true
     }
     
     // Prevent window minimization
