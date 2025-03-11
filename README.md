@@ -1,113 +1,103 @@
-# AI Tools Hub
+# Apple AI
 
-A macOS menu bar application that integrates multiple web-based AI tools into a single, convenient interface.
+A native macOS menu bar application that unifies popular AI assistants into a seamless, efficient interface.
+
+![Apple AI Interface](ui.png)
 
 ## Overview
 
-AI Tools Hub is a native macOS application that lives in your menu bar, providing quick access to popular AI services:
+Apple AI transforms how you interact with AI tools on your Mac by bringing together powerful AI assistants in one convenient menu bar application:
 
 - ChatGPT
-- Claude
-- Copilot
+- Claude 
+- GitHub Copilot
 - Perplexity
 - DeepSeek
+- Grok
 
-Each service maintains its own separate session, allowing you to switch between them seamlessly while preserving your conversation history.
+Each assistant maintains its own persistent session, allowing you to seamlessly switch between them while preserving context and conversation history.
 
-## Features
+## Key Features
 
-- **Menu Bar Integration**: Access all AI tools from a convenient menu bar icon
-- **Single Window Interface**: All AI services in one window with a simple dropdown to switch between them
-- **Keyboard Shortcuts**: Quickly access specific AI services with keyboard shortcuts (⌘⌥1 through ⌘⌥5)
-- **Session Management**: Each AI service maintains its own separate session
-- **Native macOS Experience**: Built with SwiftUI for a seamless macOS experience
+- **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
+- **Native Performance**: Built as a native macOS app for optimal speed and reliability 
+- **Keyboard Shortcuts**: Quick switching between assistants (⌘⌥1 through ⌘⌥6)
+- **Persistent Sessions**: Maintains context across app restarts
+- **Resource Efficient**: Lightweight compared to multiple browser tabs
+- **Clean Interface**: Modern, distraction-free design following macOS guidelines
+- **Multi-Window Support**: Open multiple assistant windows simultaneously
+- **Customizable Themes**: Light and dark mode with accent color options
+- **Smart History**: Search and reference past conversations
+- **Cloud Sync**: Optional iCloud sync for conversations across devices
+- **Privacy Focused**: All data stored locally by default
+
+## Perfect For
+
+- **Developers**: Quick access to coding assistants like GitHub Copilot
+- **Writers**: Seamless writing help from ChatGPT and Claude
+- **Researchers**: Efficient fact-checking with Perplexity
+- **Knowledge Workers**: Rapid answers from multiple AI sources
+- **Creative Professionals**: Instant creative inspiration
+- **Students**: Research assistance and learning support
+- **Business Users**: Quick market research and analysis
+- **Data Scientists**: Rapid prototyping and code generation
+
+## Technical Details
+
+- Built natively for Apple Silicon and Intel Macs
+- Written in Swift using SwiftUI framework
+- Minimal CPU and memory footprint
+- Secure keychain storage for API keys
+- Regular updates and maintenance
+- Active community support
 
 ## Getting Started
 
-The easiest way to get started is to run the master script:
+1. **Download & Install**
+   - Visit the [Releases](https://github.com/bunnysayzz/appleai/releases) page
+   - Download the latest `Apple.AI.dmg` file
+   - Open the downloaded DMG file
+   - Drag Apple AI.app to your Applications folder
+   - Launch the app from Applications or Spotlight
+   - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
-```
-./get_started.sh
-```
+2. **Initial Setup**
+   - Click the Apple AI icon in the menu bar
+   - Go to Preferences (⌘,) to configure your API keys
+   - Enter API keys for the AI services you plan to use
+   - Optional: Enable iCloud sync if desired
 
-This interactive script will guide you through the entire process of preparing, building, running, and installing the app.
+3. **Using the App**
+   - Click the menu bar icon or press ⌘⌥Space to open
+   - Select an AI assistant from the dropdown menu
+   - Start typing your question or prompt
+   - Use ⌘⌥1 through ⌘⌥6 to quickly switch assistants
+   - ⌘K to clear the current conversation
+   - ⌘S to save important conversations
 
-### Option 1: Quick Setup (Recommended)
 
-1. Run the preparation script to ensure all necessary files are available:
-   ```
-   ./prepare_project.sh
-   ```
 
-2. Build the application using the build script:
-   ```
-   ./build_app.sh
-   ```
-
-3. Run the app:
-   ```
-   ./run_app.sh
-   ```
-
-4. Optionally, install the app to your Applications folder:
-   ```
-   ./install_app.sh
-   ```
-
-### Option 2: Manual Setup with Xcode
-
-1. Open the project in Xcode:
-   - If you have an existing project: Open `AIToolsHub.xcodeproj` or `AIToolsHubApp/AIToolsHubApp.xcodeproj`
-   - If not, create a new macOS app project in Xcode
-
-2. Ensure the project has the following settings:
-   - Minimum deployment target: macOS 11.0 or later
-   - In Info.plist, set `LSUIElement` to `YES` (makes it a menu bar app)
-   - App Sandbox: Disabled (to allow web access)
-
-3. Build and run the app in Xcode (⌘R)
-
-## Usage
-
-1. After launching the app, you'll see a brain icon in your menu bar
-2. Click the icon to open the AI Tools Hub window
-3. Use the dropdown menu at the top to switch between different AI services
-4. Each service maintains its own session, so you can switch between them without losing your place
-5. Use keyboard shortcuts for quick access:
-   - ⌘⌥1: ChatGPT
-   - ⌘⌥2: Claude
-   - ⌘⌥3: Copilot
-   - ⌘⌥4: Perplexity
-   - ⌘⌥5: DeepSeek
-
-## Project Structure
-
-- `AIToolsApp.swift`: Main app entry point
-- `Models/AIService.swift`: Defines the AI service model and available services
-- `Views/AIWebView.swift`: WebView implementation for displaying AI services
-- `Views/MainChatView.swift`: Main UI for the app
-- `Managers/MenuBarManager.swift`: Handles menu bar integration and window management
-- `Managers/KeyboardShortcutManager.swift`: Manages global keyboard shortcuts
-
-## Helper Scripts
-
-- `get_started.sh`: Master script that guides you through the entire process
-- `prepare_project.sh`: Creates all necessary files and directories
-- `explore_project.sh`: Interactive script to explore the project structure
-- `build_app.sh`: Builds the app using xcodebuild
-- `run_app.sh`: Launches the built app
-- `install_app.sh`: Installs the app to your Applications folder
-- `check_scripts.sh`: Verifies that all scripts are available and executable
-
-## Requirements
-
-- macOS 11.0 or later
-- Xcode 12.0 or later (for building from source)
-
-## Privacy
-
-This app does not collect any data. It simply embeds the web interfaces of the AI services. You will need to log in to each service with your own credentials, and the app will maintain those sessions.
 
 ## License
 
-This project is available under the MIT License. See the LICENSE file for more information. 
+MIT License
+
+Copyright (c) 2025 Apple AI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
