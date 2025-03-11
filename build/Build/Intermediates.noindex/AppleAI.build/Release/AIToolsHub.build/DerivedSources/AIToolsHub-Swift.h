@@ -329,6 +329,7 @@ SWIFT_CLASS("_TtC10AIToolsHub14MenuBarManager")
 - (void)openSpecificService:(NSMenuItem * _Nonnull)sender;
 - (void)windowDidBecomeKey:(NSNotification * _Nonnull)notification;
 - (void)showPreferences;
+- (void)showAbout;
 - (void)menuDidClose:(NSMenu * _Nonnull)menu;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end

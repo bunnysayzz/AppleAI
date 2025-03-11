@@ -96,11 +96,11 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
         
-        // Open main window
+        // Open main window - removing keyboard shortcut
         let openItem = NSMenuItem(
             title: "Open Apple AI",
             action: #selector(togglePopupWindow),
-            keyEquivalent: "o"
+            keyEquivalent: ""  // Removed "o" keyboard shortcut
         )
         openItem.target = self
         menu.addItem(openItem)
@@ -108,7 +108,8 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
         
         // Quick access to specific AI models
-        menu.addItem(NSMenuItem(title: "Quick Access", action: nil, keyEquivalent: ""))
+        // Removing the "Quick Access" label as requested
+        // menu.addItem(NSMenuItem(title: "Quick Access", action: nil, keyEquivalent: ""))
         
         for (index, service) in aiServices.enumerated() {
             // For Grok, use index 6 if we've added 6 services
@@ -152,10 +153,19 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         let prefsItem = NSMenuItem(
             title: "Preferences",
             action: #selector(showPreferences),
-            keyEquivalent: ","
+            keyEquivalent: ""  // Removed "," keyboard shortcut
         )
         prefsItem.target = self
         menu.addItem(prefsItem)
+        
+        // Add About item
+        let aboutItem = NSMenuItem(
+            title: "About",
+            action: #selector(showAbout),
+            keyEquivalent: ""
+        )
+        aboutItem.target = self
+        menu.addItem(aboutItem)
         
         let quitItem = NSMenuItem(
             title: "Quit",
@@ -432,6 +442,23 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         
         // Store the window
         preferencesWindow = window
+    }
+    
+    @objc func showAbout() {
+        let alert = NSAlert()
+        alert.messageText = "Apple AI"
+        alert.informativeText = "Developed by Md Azharuddin\nhttps://github.com/bunnysayzz"
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Visit GitHub")
+        
+        let response = alert.runModal()
+        
+        if response == .alertSecondButtonReturn {
+            // Open GitHub URL when "Visit GitHub" is clicked
+            if let url = URL(string: "https://github.com/bunnysayzz") {
+                NSWorkspace.shared.open(url)
+            }
+        }
     }
     
     // MARK: - NSMenuDelegate

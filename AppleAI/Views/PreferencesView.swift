@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PreferencesView: View {
     @StateObject private var preferences = PreferencesManager.shared
+    @Environment(\.openURL) private var openURL
     
     var body: some View {
         VStack(spacing: 20) {
@@ -23,12 +24,40 @@ struct PreferencesView: View {
             }
             .padding(.horizontal)
             
+            // Developer section
+            GroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Developer")
+                        .font(.headline)
+                        .padding(.bottom, 5)
+                    
+                    HStack {
+                        Text("Azhar")
+                            .font(.subheadline)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            openURL(URL(string: "https://github.com/bunnysayzz")!)
+                        }) {
+                            HStack {
+                                Image(systemName: "link")
+                                Text("GitHub")
+                            }
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                    }
+                }
+                .padding()
+            }
+            .padding(.horizontal)
+            
             Button("Reset to Default") {
                 resetToDefaults()
             }
             .padding(.bottom)
         }
-        .frame(width: 400, height: 300)
+        .frame(width: 400, height: 350) // Increased height to accommodate the new section
     }
     
     private func binding(for key: String) -> Binding<String> {

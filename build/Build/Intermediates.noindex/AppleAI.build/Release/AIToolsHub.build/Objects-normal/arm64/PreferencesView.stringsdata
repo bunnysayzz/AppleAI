@@ -7,7 +7,7 @@
         "key": "Preferences",
         "location": {
           "startingColumn": 18,
-          "startingLine": 8
+          "startingLine": 9
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "Open at Login",
         "location": {
           "startingColumn": 20,
-          "startingLine": 12
+          "startingLine": 13
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "Reset to Default",
         "location": {
           "startingColumn": 20,
-          "startingLine": 26
+          "startingLine": 55
         }
       },
       {
@@ -31,7 +31,31 @@
         "key": "Keyboard Shortcuts",
         "location": {
           "startingColumn": 26,
-          "startingLine": 17
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "Developer",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "Azhar",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 35
+        }
+      },
+      {
+        "comment": "",
+        "key": "GitHub",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 45
         }
       }
     ]

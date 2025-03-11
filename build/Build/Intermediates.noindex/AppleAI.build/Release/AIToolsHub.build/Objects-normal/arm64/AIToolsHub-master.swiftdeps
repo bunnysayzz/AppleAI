@@ -1,18 +1,18 @@
 version: "Apple Swift version 6.0.3 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)"
 options: "d2e34ca92d535313746e68f48af9fea95dc3ad2f979aa2fdd4447413e69a7fa2"
-build_start_time: [1741690569, 678625000]
-build_end_time: [1741690576, 749876000]
+build_start_time: [1741717038, 864702000]
+build_end_time: [1741717046, 236942000]
 inputs:
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/AIToolsApp.swift": [1741620939, 710973118]
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Managers/KeyboardShortcutManager.swift": [1741683838, 346101123]
-  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Managers/MenuBarManager.swift": [1741687002, 194505231]
+  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Managers/MenuBarManager.swift": [1741716975, 809897258]
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Managers/PreferencesManager.swift": [1741683837, 301323282]
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Models/AIService.swift": [1741620940, 960772841]
-  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/AIWebView.swift": [1741686979, 199132382]
-  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/CompactChatView.swift": [1741690522, 714490239]
-  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/MainChatView.swift": [1741690521, 689664470]
+  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/AIWebView.swift": [1741700391, 427553448]
+  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/CompactChatView.swift": [1741716504, 828100475]
+  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/MainChatView.swift": [1741716505, 855757651]
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/MultiTabView.swift": [1741625522, 15402405]
-  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/PreferencesView.swift": [1741592017, 934840150]
+  "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/PreferencesView.swift": [1741716506, 926958857]
   "/Users/mdazharuddin/Desktop/AppleAI/AppleAI/Views/ShortcutRecorder.swift": [1741591506, 943238203]
   ? "/Users/mdazharuddin/Desktop/AppleAI/build/Build/Intermediates.noindex/AppleAI.build/Release/AIToolsHub.build/DerivedSources/GeneratedAssetSymbols.swift"
-  : [1741690568, 562798222]
+  : [1741717037, 954114386]
