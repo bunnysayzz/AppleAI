@@ -104,3 +104,7 @@ project.xcworkspace
 # Git artifacts (these are usually ignored automatically)
 .git/
 .gitattributes 
+
+# Build artifacts
+.build_app.sh
+.create_dmg.sh
