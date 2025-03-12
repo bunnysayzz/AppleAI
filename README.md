@@ -23,14 +23,11 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 
 - **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
 - **Native Performance**: Built as a native macOS app for optimal speed and reliability 
-- **Keyboard Shortcuts**: Quick switching between assistants (⌘⌥1 through ⌘⌥6)
 - **Persistent Sessions**: Maintains context across app restarts
 - **Resource Efficient**: Lightweight compared to multiple browser tabs
 - **Clean Interface**: Modern, distraction-free design following macOS guidelines
-- **Multi-Window Support**: Open multiple assistant windows simultaneously
 - **Customizable Themes**: Light and dark mode with accent color options
 - **Smart History**: Search and reference past conversations
-- **Cloud Sync**: Optional iCloud sync for conversations across devices
 - **Privacy Focused**: All data stored locally by default
 ![Apple AI Interface](ui.png)
 
@@ -50,7 +47,6 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - Built natively for Apple Silicon and Intel Macs
 - Written in Swift using SwiftUI framework
 - Minimal CPU and memory footprint
-- Secure keychain storage for API keys
 - Regular updates and maintenance
 - Active community support
 
@@ -63,22 +59,6 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
    - Drag Apple AI.app to your Applications folder
    - Launch the app from Applications or Spotlight
    - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
-
-2. **Initial Setup**
-   - Click the Apple AI icon in the menu bar
-   - Go to Preferences (⌘,) to configure your API keys
-   - Enter API keys for the AI services you plan to use
-   - Optional: Enable iCloud sync if desired
-
-3. **Using the App**
-   - Click the menu bar icon or press ⌘⌥Space to open
-   - Select an AI assistant from the dropdown menu
-   - Start typing your question or prompt
-   - Use ⌘⌥1 through ⌘⌥6 to quickly switch assistants
-   - ⌘K to clear the current conversation
-   - ⌘S to save important conversations
-
-
 
 
 ## License
