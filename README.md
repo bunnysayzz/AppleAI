@@ -1,8 +1,10 @@
 # Apple AI
 
-A native macOS menu bar application that unifies popular AI assistants into a seamless, efficient interface.
+Apple AI is a native macOS menu bar app that integrates top AI assistants like ChatGPT, Claude, GitHub Copilot, Perplexity, DeepSeek, and Grok into one streamlined interface
+![Apple AI](interface.png)
 
-![Apple AI Interface](ui.png)
+
+
 
 ## Overview
 
@@ -30,6 +32,7 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - **Smart History**: Search and reference past conversations
 - **Cloud Sync**: Optional iCloud sync for conversations across devices
 - **Privacy Focused**: All data stored locally by default
+![Apple AI Interface](ui.png)
 
 ## Perfect For
 
