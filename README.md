@@ -1,12 +1,16 @@
 # Apple AI
 
-Apple AI is a native macOS menu bar app that integrates top AI assistants like ChatGPT, Claude, GitHub Copilot, Perplexity, DeepSeek, and Grok into one streamlined interface
+A MacOS menu bar app for ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface
+
 ![Apple AI](interface.png)
 
 
-
-
 ## Overview
+
+[![Apple AI](https://github.com/user-attachments/assets/3cb46101-0ec4-49ea-9c50-99eaa6d8344b)](https://github.com/user-attachments/assets/3cb46101-0ec4-49ea-9c50-99eaa6d8344b)
+
+
+
 
 Apple AI transforms how you interact with AI tools on your Mac by bringing together powerful AI assistants in one convenient menu bar application:
 
@@ -29,7 +33,6 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - **Customizable Themes**: Light and dark mode with accent color options
 - **Smart History**: Search and reference past conversations
 - **Privacy Focused**: All data stored locally by default
-![Apple AI Interface](ui.png)
 
 ## Perfect For
 
@@ -50,7 +53,7 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - Regular updates and maintenance
 - Active community support
 
-## Getting Started
+## Security Considerations
 
 1. **Download & Install**
    - Visit the [Releases](https://github.com/bunnysayzz/appleai/releases) page
@@ -60,27 +63,7 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
    - Launch the app from Applications or Spotlight
    - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
+When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature. This is a normal security measure to ensure the app is from a trusted source. To proceed with the installation:
 
-## License
+- If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
-MIT License
-
-Copyright (c) 2025 Apple AI
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
