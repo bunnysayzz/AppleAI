@@ -115,3 +115,4 @@ run_app.sh
 build/
 build_universal/
 
+logs/
