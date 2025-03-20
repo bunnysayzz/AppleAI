@@ -16,6 +16,8 @@ class PreferencesManager: ObservableObject {
     @Published var alwaysOnTop: Bool {
         didSet {
             UserDefaults.standard.set(alwaysOnTop, forKey: "alwaysOnTop")
+            // Post notification for window level changes
+            NotificationCenter.default.post(name: Notification.Name("AlwaysOnTopChanged"), object: nil)
         }
     }
     
@@ -43,6 +45,16 @@ class PreferencesManager: ObservableObject {
     // This method no longer changes the shortcut
     func setShortcut(_ shortcut: String, for key: String) {
         // Do nothing - shortcuts can't be changed
+    }
+    
+    // Toggle always on top setting
+    func toggleAlwaysOnTop() {
+        alwaysOnTop.toggle()
+    }
+    
+    // Set always on top setting directly
+    func setAlwaysOnTop(_ value: Bool) {
+        alwaysOnTop = value
     }
     
     func resetToDefaults() {

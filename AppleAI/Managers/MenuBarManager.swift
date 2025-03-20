@@ -226,7 +226,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         // Configure the window
         window.title = "Apple AI"
         window.isReleasedWhenClosed = false // Important: Don't release window when closed
-        window.level = .normal
+        
+        // Set initial window level based on preference
+        window.level = PreferencesManager.shared.alwaysOnTop ? .floating : .normal
         
         // Set collection behavior to ensure it appears on current space
         window.collectionBehavior = [.moveToActiveSpace, .transient]
@@ -242,6 +244,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         
         // Set the window delegate to handle close button
         window.delegate = self
+        
+        // Add pin button to title bar
+        addPinButtonToTitleBar(window)
         
         // Set the content view to our CompactChatView
         let contentView = CompactChatView(closeAction: { [weak self] in
@@ -308,7 +313,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             // Configure the window
             window.title = "Apple AI"
             window.isReleasedWhenClosed = false // Important: Don't release window when closed
-            window.level = .normal
+            
+            // Set initial window level based on preference
+            window.level = PreferencesManager.shared.alwaysOnTop ? .floating : .normal
             
             // Set collection behavior to ensure it appears on current space
             window.collectionBehavior = [.moveToActiveSpace, .transient]
@@ -324,6 +331,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             
             // Set the window delegate to handle close button
             window.delegate = self
+            
+            // Add pin button to title bar
+            addPinButtonToTitleBar(window)
             
             // Set the content view to our CompactChatView with the specific service
             let contentView = CompactChatView(
@@ -370,6 +380,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         // Ensure the window appears on the active space
         window.collectionBehavior = [.moveToActiveSpace, .transient]
         
+        // Set window level based on alwaysOnTop preference
+        window.level = PreferencesManager.shared.alwaysOnTop ? .floating : .normal
+        
         // Position the window below the status item
         if let button = statusItem.button {
             let buttonRect = button.convert(button.bounds, to: nil)
@@ -399,6 +412,33 @@ class MenuBarManager: NSObject, NSMenuDelegate {
                 self.makeWebViewFirstResponder(contentView)
             }
         }
+        
+        // Setup window level observer to update when alwaysOnTop changes
+        setupWindowLevelObserver(for: window)
+    }
+    
+    // Add observer to update window level when alwaysOnTop preference changes
+    private func setupWindowLevelObserver(for window: NSWindow) {
+        // Remove existing observer if any
+        NotificationCenter.default.removeObserver(self, name: Notification.Name("AlwaysOnTopChanged"), object: nil)
+        
+        // Add observer for AlwaysOnTopChanged notification
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateWindowLevel),
+            name: Notification.Name("AlwaysOnTopChanged"),
+            object: nil
+        )
+    }
+    
+    @objc private func updateWindowLevel() {
+        guard let window = popupWindow else { return }
+        
+        // Update window level based on preference with animation
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.2
+            window.animator().level = PreferencesManager.shared.alwaysOnTop ? .floating : .normal
+        })
     }
     
     // Helper method to find a WKWebView in the view hierarchy and make it first responder
@@ -462,6 +502,30 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         // Ensure the menu is removed after it's closed
         statusItem.menu = nil
     }
+    
+    // Add a new method to add the pin button to the title bar
+    private func addPinButtonToTitleBar(_ window: NSWindow) {
+        // Create a SwiftUI hosting controller for the enhanced pin button
+        let hostingController = NSHostingController(rootView: 
+            EnhancedPinButton(
+                isPinned: Binding<Bool>(
+                    get: { PreferencesManager.shared.alwaysOnTop },
+                    set: { PreferencesManager.shared.setAlwaysOnTop($0) }
+                )
+            )
+        )
+        
+        // Size the view appropriately - make it a bit larger for better visibility
+        hostingController.view.frame = NSRect(x: 0, y: 0, width: 36, height: 30)
+        
+        // Create a title bar accessory view controller with more breathing room
+        let accessoryViewController = NSTitlebarAccessoryViewController()
+        accessoryViewController.view = hostingController.view
+        accessoryViewController.layoutAttribute = .trailing
+        
+        // Add the accessory view controller to the window
+        window.addTitlebarAccessoryViewController(accessoryViewController)
+    }
 }
 
 // Add NSWindowDelegate extension to MenuBarManager
@@ -517,5 +581,124 @@ extension MenuBarManager: NSWindowDelegate {
             return false
         }
         return true // Allow zoom for other windows
+    }
+}
+
+// Add the enhanced pin button view
+struct EnhancedPinButton: View {
+    @Binding var isPinned: Bool
+    @State private var isHovered = false
+    @State private var isPressed = false
+    @State private var animatePin = false
+    @State private var pulsate = false
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                isPinned.toggle()
+                isPressed = true
+                
+                // Trigger pin animation
+                animatePin = true
+                
+                // Reset press state after delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isPressed = false
+                }
+                
+                // Reset animation trigger after animation completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    animatePin = false
+                }
+                
+                // Start pulsating if pinned
+                if isPinned {
+                    startPulseAnimation()
+                }
+            }
+        }) {
+            ZStack {
+                // Animated glow effect for pinned state
+                if isPinned {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .opacity(pulsate ? 0.2 : 0.0)
+                        .scaleEffect(pulsate ? 1.3 : 0.8)
+                        .frame(width: 30, height: 30)
+                        .animation(Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulsate)
+                }
+                
+                // Background shape
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        isPinned 
+                        ? Color.accentColor.opacity(isHovered ? 0.7 : 0.5) 
+                        : (isHovered ? Color.secondary.opacity(0.3) : Color.clear)
+                    )
+                    .frame(width: 28, height: 28)
+                    .scaleEffect(isPressed ? 0.85 : 1.0)
+                    .shadow(color: isPinned ? Color.accentColor.opacity(0.5) : Color.clear, 
+                           radius: isPinned ? 3 : 0, 
+                           x: 0, y: isPinned ? 1 : 0)
+                
+                // Pin icon with enhanced animations
+                Image(systemName: isPinned ? "pin.fill" : "pin")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(isPinned ? Color.white : (isHovered ? Color.primary : Color.secondary))
+                    .rotationEffect(Angle(degrees: isPinned ? 0 : 45))
+                    .scaleEffect(animatePin ? 1.4 : 1.0)
+                    .shadow(color: isPinned ? Color.accentColor.opacity(0.7) : Color.clear, radius: animatePin ? 4 : 0)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.5), value: animatePin)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isPinned)
+                    .blur(radius: animatePin && isPinned ? 0.5 : 0)
+            }
+            .overlay(
+                // Add a subtle border that glows when pinned
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(
+                        isPinned ? Color.accentColor : Color.clear,
+                        lineWidth: isPinned ? 1.5 : 0
+                    )
+                    .opacity(isHovered && !isPinned ? 0.7 : 1.0)
+            )
+            // Add a slight 3D effect with offset
+            .offset(y: isPressed ? 1 : 0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+            
+            // Give subtle feedback on hover with haptic-like animation
+            if hovering && !isPressed {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                    isPressed = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isPressed = false
+                    }
+                }
+            }
+        }
+        .help(isPinned ? "Unpin window (Currently stays on top)" : "Pin window to stay on top")
+        .onAppear {
+            // Start pulsing animation if pinned when view appears
+            if isPinned {
+                startPulseAnimation()
+            }
+        }
+        .onChange(of: isPinned) { newValue in
+            // Start or stop pulsating based on pin state
+            if newValue {
+                startPulseAnimation()
+            } else {
+                pulsate = false
+            }
+        }
+    }
+    
+    // Helper function to start the pulsing animation
+    private func startPulseAnimation() {
+        pulsate = true
     }
 } 

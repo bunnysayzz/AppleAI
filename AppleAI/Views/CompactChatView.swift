@@ -4,6 +4,7 @@ import WebKit
 struct CompactChatView: View {
     @State private var selectedService: AIService
     @State private var isLoading = true
+    @StateObject private var preferences = PreferencesManager.shared
     let services: [AIService]
     let closeAction: () -> Void
     
@@ -50,6 +51,8 @@ struct CompactChatView: View {
                 .frame(height: 40)
                 
                 Spacer()
+                
+                // Pin button removed - now in title bar
             }
             .padding(.vertical, 6)
             .background(Color(NSColor.windowBackgroundColor))
@@ -122,7 +125,7 @@ struct CompactChatView: View {
     }
 }
 
-// Custom service icon button
+// Keep the service icon button
 struct ServiceIconButton: View {
     let service: AIService
     let isSelected: Bool
