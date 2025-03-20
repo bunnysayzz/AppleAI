@@ -13,12 +13,27 @@ struct PreferencesView: View {
             Toggle("Open at Login", isOn: $preferences.openAtLogin)
                 .padding(.horizontal)
             
+            Toggle("Always on top", isOn: $preferences.alwaysOnTop)
+                .padding(.horizontal)
+                .help("When enabled, the app window won't hide when clicking outside")
+            
             GroupBox {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Keyboard Shortcuts")
                         .font(.headline)
                         .padding(.bottom, 5)
-                    ShortcutRecorder(label: "Toggle Window", shortcut: binding(for: "toggleWindow"))
+                    
+                    // Static keyboard shortcut display instead of recorder
+                    HStack {
+                        Text("Toggle Window")
+                            .frame(width: 100, alignment: .leading)
+                        
+                        Text("⌘E")
+                            .frame(width: 150, alignment: .center)
+                            .padding(6)
+                            .background(Color.secondary.opacity(0.1))
+                            .cornerRadius(6)
+                    }
                 }
                 .padding()
             }
@@ -52,25 +67,10 @@ struct PreferencesView: View {
             }
             .padding(.horizontal)
             
-            Button("Reset to Default") {
-                resetToDefaults()
-            }
-            .padding(.bottom)
+            // Removed the "Reset to Default" button since shortcuts are fixed
+            Spacer()
         }
-        .frame(width: 400, height: 350) // Increased height to accommodate the new section
-    }
-    
-    private func binding(for key: String) -> Binding<String> {
-        Binding(
-            get: { preferences.shortcuts[key] ?? "" },
-            set: { preferences.shortcuts[key] = $0 }
-        )
-    }
-    
-    private func resetToDefaults() {
-        preferences.shortcuts = [
-            "toggleWindow": "⌘⌥O"
-        ]
+        .frame(width: 400, height: 350)
     }
 }
 

@@ -13,26 +13,25 @@ class PreferencesManager: ObservableObject {
         }
     }
     
-    @Published var shortcuts: [String: String] {
+    @Published var alwaysOnTop: Bool {
         didSet {
-            if let encoded = try? JSONEncoder().encode(shortcuts) {
-                UserDefaults.standard.set(encoded, forKey: "shortcuts")
-            }
+            UserDefaults.standard.set(alwaysOnTop, forKey: "alwaysOnTop")
         }
     }
     
+    // Make shortcuts a read-only property with fixed value
+    var shortcuts: [String: String] = [
+        "toggleWindow": "⌘E"
+    ]
+    
     private init() {
         self.openAtLogin = UserDefaults.standard.bool(forKey: "openAtLogin")
+        self.alwaysOnTop = UserDefaults.standard.bool(forKey: "alwaysOnTop")
         
-        if let data = UserDefaults.standard.data(forKey: "shortcuts"),
-           let decoded = try? JSONDecoder().decode([String: String].self, from: data) {
-            self.shortcuts = decoded
-        } else {
-            // Simplified shortcuts - just the toggle window shortcut
-            self.shortcuts = [
-                "toggleWindow": "⌘⌥O"
-            ]
-        }
+        // Always use ⌘E regardless of what might be stored in UserDefaults
+        self.shortcuts = [
+            "toggleWindow": "⌘E"
+        ]
         
         updateLoginItem()
     }
@@ -41,15 +40,13 @@ class PreferencesManager: ObservableObject {
         return shortcuts[key] ?? ""
     }
     
+    // This method no longer changes the shortcut
     func setShortcut(_ shortcut: String, for key: String) {
-        shortcuts[key] = shortcut
+        // Do nothing - shortcuts can't be changed
     }
     
     func resetToDefaults() {
-        // Consistent with the default in init
-        shortcuts = [
-            "toggleWindow": "⌘⌥O"
-        ]
+        // No need to update shortcuts as they're now fixed
     }
     
     private func updateLoginItem() {

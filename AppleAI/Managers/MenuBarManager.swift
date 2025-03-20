@@ -58,6 +58,11 @@ class MenuBarManager: NSObject, NSMenuDelegate {
                     return
                 }
                 
+                // Don't hide the window if "Always on top" is enabled
+                if PreferencesManager.shared.alwaysOnTop {
+                    return
+                }
+                
                 let mouseLocation = NSEvent.mouseLocation
                 let windowFrame = window.frame
                 
@@ -96,11 +101,11 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
         
-        // Open main window - removing keyboard shortcut
+        // Open main window - adding Command+E keyboard shortcut
         let openItem = NSMenuItem(
             title: "Open Apple AI",
             action: #selector(togglePopupWindow),
-            keyEquivalent: ""  // Removed "o" keyboard shortcut
+            keyEquivalent: "e"  // "e" for Command+E
         )
         openItem.target = self
         menu.addItem(openItem)
@@ -158,14 +163,14 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         prefsItem.target = self
         menu.addItem(prefsItem)
         
-        // Add About item
-        let aboutItem = NSMenuItem(
-            title: "About",
-            action: #selector(showAbout),
+        // Replace "About" with "Azhar" menu item that directly opens GitHub
+        let azharItem = NSMenuItem(
+            title: "Azhar",
+            action: #selector(openGitHub),
             keyEquivalent: ""
         )
-        aboutItem.target = self
-        menu.addItem(aboutItem)
+        azharItem.target = self
+        menu.addItem(azharItem)
         
         let quitItem = NSMenuItem(
             title: "Quit",
@@ -444,20 +449,10 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         preferencesWindow = window
     }
     
-    @objc func showAbout() {
-        let alert = NSAlert()
-        alert.messageText = "Apple AI"
-        alert.informativeText = "Developed by Md Azharuddin\nhttps://github.com/bunnysayzz"
-        alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Visit GitHub")
-        
-        let response = alert.runModal()
-        
-        if response == .alertSecondButtonReturn {
-            // Open GitHub URL when "Visit GitHub" is clicked
-            if let url = URL(string: "https://github.com/bunnysayzz") {
-                NSWorkspace.shared.open(url)
-            }
+    @objc func openGitHub() {
+        // Open GitHub URL when "Azhar" is clicked
+        if let url = URL(string: "https://github.com/bunnysayzz") {
+            NSWorkspace.shared.open(url)
         }
     }
     
