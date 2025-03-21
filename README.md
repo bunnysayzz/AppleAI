@@ -24,6 +24,7 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 
 - **Global ⌘E Shortcut**: Toggle the app window from anywhere on your Mac with Command+E
 - **Always on Top Mode**: Keep the window visible even when clicking outside
+- **Pinnable Interface**: Pin the AI interface to keep it accessible while working in other applications
 - **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
 - **Quick Service Switching**: Dedicated keyboard shortcuts for each AI service
 - **Native Performance**: Built as a native macOS app for optimal speed and reliability
@@ -33,12 +34,14 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - **Customizable Themes**: Light and dark mode with accent color options
 - **Smart History**: Search and reference past conversations
 - **Privacy Focused**: All data stored locally by default
+- **Full Keyboard Support**: Copy, paste, and select all functionality in all AI chat inputs
 
 ## Keyboard Shortcuts
 
 Apple AI provides system-wide keyboard shortcuts for quick access:
 
 - **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
+- **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
 - 
 The global ⌘E shortcut works from any application, giving you instant access to AI assistance whenever you need it.
 
@@ -56,8 +59,10 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 
 - Use ⌘E to quickly show/hide the Apple AI window from any application
 - Enable "Always on Top" when you need to reference AI responses while working in another app
+- Pin the interface to keep it accessible at all times while working
 - Use the service-specific shortcuts (⌘⌥1-6) to quickly switch between AI providers
 - Pin the app to your menu bar for easy access
+- Use standard keyboard shortcuts (⌘C, ⌘V, ⌘A) in all AI chat input fields
 
 ## Perfect For
 

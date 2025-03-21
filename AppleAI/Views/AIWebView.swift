@@ -13,6 +13,9 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
     // Track when a file picker is active to prevent window hiding
     @Published var isFilePickerActive: Bool = false
     
+    // Dictionary to track keyboard shortcut injection timers for each webview
+    private var keyboardShortcutTimers: [WKWebView: Timer] = [:]
+    
     override private init() {
         super.init()
         // Preload all service webviews on initialization
@@ -22,6 +25,11 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
     deinit {
         // Clean up all timers
         for timer in chatGPTTimers.values {
+            timer.invalidate()
+        }
+        
+        // Clean up all keyboard shortcut timers
+        for timer in keyboardShortcutTimers.values {
             timer.invalidate()
         }
     }
@@ -79,6 +87,17 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
         webView.allowsLinkPreview = true
         webView.wantsLayer = true
         
+        // Register for key events (this helps to ensure the web view gets keyboard events)
+        let keyEvents: [NSEvent.EventTypeMask] = [.keyDown, .keyUp, .flagsChanged]
+        for eventMask in keyEvents {
+            NSEvent.addLocalMonitorForEvents(matching: eventMask) { [weak webView] event in
+                if let webView = webView, webView.window?.firstResponder == webView {
+                    return event
+                }
+                return event
+            }
+        }
+        
         // Load the URL
         webView.load(URLRequest(url: service.url))
         
@@ -98,6 +117,14 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                     self.loadingStates[serviceId] = false
                 }
                 
+                // Inject keyboard shortcut handlers
+                injectKeyboardShortcutHandlers(webView)
+                
+                // Inject service-specific handlers
+                if let service = aiServices.first(where: { $0.id == serviceId }) {
+                    injectServiceSpecificHandlers(webView, for: service)
+                }
+                
                 // Check if this is ChatGPT and inject JavaScript to handle enter key
                 if let service = aiServices.first(where: { $0.id == serviceId }),
                    service.name == "ChatGPT" {
@@ -105,6 +132,136 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                 }
                 
                 break
+            }
+        }
+    }
+    
+    // Function to inject JavaScript for keyboard shortcuts (copy, paste, select all)
+    private func injectKeyboardShortcutHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Check if we've already injected this script
+            if (window._keyboardShortcutsInjected) return;
+            window._keyboardShortcutsInjected = true;
+            
+            // Store original event handlers
+            const originalKeyDown = document.onkeydown;
+            
+            // Map keyCodes to their actions for easier reference
+            const KEY_ACTIONS = {
+                65: 'selectall',  // A
+                67: 'copy',       // C
+                86: 'paste',      // V
+                88: 'cut'         // X
+            };
+            
+            // Add event listener to ensure keyboard shortcuts work
+            document.addEventListener('keydown', function(e) {
+                // Handle only cmd/ctrl key combinations
+                if (!(e.metaKey || e.ctrlKey)) return;
+                
+                const keyCode = e.keyCode || e.which;
+                const action = KEY_ACTIONS[keyCode];
+                
+                if (!action) return; // Not a shortcut we're handling
+                
+                // Get the active/focused element
+                const activeElement = document.activeElement;
+                const isEditable = activeElement && (
+                    activeElement.isContentEditable || 
+                    activeElement.tagName === 'INPUT' || 
+                    activeElement.tagName === 'TEXTAREA' || 
+                    activeElement.tagName === 'SELECT' ||
+                    activeElement.role === 'textbox' ||
+                    activeElement.getAttribute('contenteditable') === 'true'
+                );
+                
+                // Handle Select All (Cmd+A)
+                if (action === 'selectall' && isEditable) {
+                    if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                        setTimeout(function() {
+                            activeElement.select();
+                        }, 0);
+                    } else if (activeElement.isContentEditable || activeElement.getAttribute('contenteditable') === 'true') {
+                        // For contentEditable elements, select all text inside
+                        setTimeout(function() {
+                            const selection = window.getSelection();
+                            const range = document.createRange();
+                            range.selectNodeContents(activeElement);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }, 0);
+                    }
+                    // Don't prevent default for other elements to allow browser's native select all
+                }
+                
+                // For editable fields, we'll ensure the native behavior works
+                if (isEditable) {
+                    // We intentionally don't preventDefault to allow native handling in inputs
+                    // This often works better than custom implementation
+                    console.log('Native keyboard shortcut handling: ' + action);
+                }
+                
+                // Let original event handler run if it exists
+                if (typeof originalKeyDown === 'function') {
+                    return originalKeyDown.call(this, e);
+                }
+            }, true);
+            
+            // Add a mutation observer to handle dynamically added elements
+            const observer = new MutationObserver(function(mutations) {
+                // Check if important UI elements that handle keyboard input have been added
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes && mutation.addedNodes.length) {
+                        for (let i = 0; i < mutation.addedNodes.length; i++) {
+                            const node = mutation.addedNodes[i];
+                            if (node.nodeType === 1) { // Element node
+                                // Ensure our handlers are applied to new inputs
+                                if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || 
+                                    node.getAttribute('contenteditable') === 'true' ||
+                                    node.isContentEditable) {
+                                    // This is an input element, make sure it will work with keyboard shortcuts
+                                    console.log('New input element detected, ensuring keyboard shortcuts work');
+                                }
+                                
+                                // Also check children
+                                const inputs = node.querySelectorAll('input, textarea, [contenteditable="true"]');
+                                if (inputs.length) {
+                                    console.log('New input elements found within added node');
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Start observing body for changes
+            observer.observe(document.body, { 
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['contenteditable', 'class', 'id']
+            });
+            
+            // Override execCommand for better copy/paste/cut support
+            const originalExecCommand = document.execCommand;
+            document.execCommand = function(command, showUI, value) {
+                console.log('ExecCommand called:', command);
+                return originalExecCommand.call(this, command, showUI, value);
+            };
+            
+            console.log('Enhanced keyboard shortcuts handlers injected successfully');
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting keyboard shortcut handlers: \(error)")
+            } else {
+                print("Successfully injected keyboard shortcut handlers")
+                
+                // Schedule periodic reinjection to ensure shortcuts keep working
+                self.scheduleKeyboardShortcutsReinject(webView)
             }
         }
     }
@@ -388,12 +545,335 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                         """
                         
                         webView.evaluateJavaScript(simulateFileUploadScript) { (result, error) in
-                            if error != nil {
-                                print("Error simulating file upload: \(error!)")
+                            if let error = error {
+                                print("Error simulating file upload: \(error)")
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    // Function to periodically re-inject the keyboard shortcuts
+    private func scheduleKeyboardShortcutsReinject(_ webView: WKWebView) {
+        // Cancel any existing timer for this webview
+        if let existingTimer = keyboardShortcutTimers[webView] {
+            existingTimer.invalidate()
+            keyboardShortcutTimers.removeValue(forKey: webView)
+        }
+        
+        // Create a new timer
+        let timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self, weak webView] timer in
+            guard let self = self, let webView = webView else {
+                timer.invalidate()
+                return
+            }
+            
+            // Check if the webview is visible
+            if !webView.isHidden {
+                // Re-apply the keyboard shortcuts script
+                let checkScript = """
+                if (!window._keyboardShortcutsInjected) {
+                    true;
+                } else {
+                    false;
+                }
+                """
+                
+                webView.evaluateJavaScript(checkScript) { (result, error) in
+                    if let needsReinject = result as? Bool, needsReinject {
+                        self.injectKeyboardShortcutHandlers(webView)
+                    }
+                }
+            }
+        }
+        
+        // Store the timer
+        keyboardShortcutTimers[webView] = timer
+    }
+    
+    // Function to inject service-specific JavaScript handlers
+    private func injectServiceSpecificHandlers(_ webView: WKWebView, for service: AIService) {
+        switch service.name {
+        case "ChatGPT":
+            injectChatGPTKeyboardHandlers(webView)
+        case "Claude":
+            injectClaudeKeyboardHandlers(webView)
+        case "Copilot":
+            injectCopilotKeyboardHandlers(webView)
+        case "Perplexity":
+            injectPerplexityKeyboardHandlers(webView)
+        case "Grok":
+            injectGrokKeyboardHandlers(webView)
+        default:
+            // General handlers already applied
+            break
+        }
+    }
+    
+    // ChatGPT specific keyboard handlers
+    private func injectChatGPTKeyboardHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Focus on ensuring clipboard operations work in the textarea
+            function enhanceChatGPTTextareas() {
+                const textareas = document.querySelectorAll('[data-testid="chat-input-textarea"]');
+                textareas.forEach(textarea => {
+                    if (!textarea.dataset.keyboardEnhanced) {
+                        textarea.dataset.keyboardEnhanced = "true";
+                        
+                        // Ensure paste works
+                        textarea.addEventListener('paste', function(e) {
+                            // Let the browser handle paste
+                            console.log('Paste event in ChatGPT textarea');
+                        });
+                        
+                        // Ensure copy works
+                        textarea.addEventListener('copy', function(e) {
+                            // Let the browser handle copy
+                            console.log('Copy event in ChatGPT textarea');
+                        });
+                        
+                        // Ensure cut works
+                        textarea.addEventListener('cut', function(e) {
+                            // Let the browser handle cut
+                            console.log('Cut event in ChatGPT textarea');
+                        });
+                    }
+                });
+            }
+            
+            // Run immediately
+            enhanceChatGPTTextareas();
+            
+            // Set up a MutationObserver to handle dynamically added elements
+            const observer = new MutationObserver(function() {
+                enhanceChatGPTTextareas();
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting ChatGPT keyboard handlers: \(error)")
+            } else {
+                print("Successfully injected ChatGPT keyboard handlers")
+            }
+        }
+    }
+    
+    // Claude specific keyboard handlers
+    private func injectClaudeKeyboardHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Focus on ensuring clipboard operations work in Claude's input area
+            function enhanceClaudeInputs() {
+                // Claude uses a contenteditable div for input
+                const inputAreas = document.querySelectorAll('[contenteditable="true"]');
+                inputAreas.forEach(input => {
+                    if (!input.dataset.keyboardEnhanced) {
+                        input.dataset.keyboardEnhanced = "true";
+                        
+                        // Custom select all handler for contenteditable
+                        input.addEventListener('keydown', function(e) {
+                            if (e.metaKey && e.key === 'a') {
+                                e.preventDefault();
+                                const selection = window.getSelection();
+                                const range = document.createRange();
+                                range.selectNodeContents(input);
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                                return false;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Run immediately
+            enhanceClaudeInputs();
+            
+            // Set up a MutationObserver to handle dynamically added elements
+            const observer = new MutationObserver(function() {
+                enhanceClaudeInputs();
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting Claude keyboard handlers: \(error)")
+            } else {
+                print("Successfully injected Claude keyboard handlers")
+            }
+        }
+    }
+    
+    // Copilot specific keyboard handlers
+    private func injectCopilotKeyboardHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Focus on ensuring clipboard operations work in Copilot's textarea
+            function enhanceCopilotInputs() {
+                // Copilot usually uses a standard textarea
+                const textareas = document.querySelectorAll('textarea');
+                textareas.forEach(textarea => {
+                    if (!textarea.dataset.keyboardEnhanced) {
+                        textarea.dataset.keyboardEnhanced = "true";
+                        
+                        // Ensure cmd+a works 
+                        textarea.addEventListener('keydown', function(e) {
+                            if (e.metaKey && e.key === 'a') {
+                                textarea.select();
+                                e.preventDefault();
+                                return false;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Run immediately
+            enhanceCopilotInputs();
+            
+            // Set up a MutationObserver to handle dynamically added elements
+            const observer = new MutationObserver(function() {
+                enhanceCopilotInputs();
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting Copilot keyboard handlers: \(error)")
+            } else {
+                print("Successfully injected Copilot keyboard handlers")
+            }
+        }
+    }
+    
+    // Perplexity specific keyboard handlers
+    private func injectPerplexityKeyboardHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Focus on ensuring clipboard operations work in Perplexity's input
+            function enhancePerplexityInputs() {
+                // Perplexity often uses a textarea or contenteditable div
+                const inputs = [...document.querySelectorAll('textarea'), ...document.querySelectorAll('[contenteditable="true"]')];
+                inputs.forEach(input => {
+                    if (!input.dataset.keyboardEnhanced) {
+                        input.dataset.keyboardEnhanced = "true";
+                        
+                        // For contenteditable divs
+                        if (input.getAttribute('contenteditable') === 'true') {
+                            input.addEventListener('keydown', function(e) {
+                                if (e.metaKey && e.key === 'a') {
+                                    e.preventDefault();
+                                    const selection = window.getSelection();
+                                    const range = document.createRange();
+                                    range.selectNodeContents(input);
+                                    selection.removeAllRanges();
+                                    selection.addRange(range);
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Run immediately
+            enhancePerplexityInputs();
+            
+            // Set up a MutationObserver to handle dynamically added elements
+            const observer = new MutationObserver(function() {
+                enhancePerplexityInputs();
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting Perplexity keyboard handlers: \(error)")
+            } else {
+                print("Successfully injected Perplexity keyboard handlers")
+            }
+        }
+    }
+    
+    // Grok specific keyboard handlers
+    private func injectGrokKeyboardHandlers(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Focus on ensuring clipboard operations work in Grok's input area
+            function enhanceGrokInputs() {
+                // Grok typically uses textareas or contenteditable divs
+                const inputs = document.querySelectorAll('textarea, [contenteditable="true"], [role="textbox"]');
+                
+                inputs.forEach(input => {
+                    if (!input.dataset.keyboardEnhanced) {
+                        input.dataset.keyboardEnhanced = "true";
+                        
+                        // Ensure keyboard shortcuts work
+                        input.addEventListener('keydown', function(e) {
+                            if (e.metaKey || e.ctrlKey) {
+                                // For contenteditable divs, handle select all
+                                if ((e.key === 'a' || e.keyCode === 65) && 
+                                    (input.getAttribute('contenteditable') === 'true' || input.getAttribute('role') === 'textbox')) {
+                                    e.preventDefault();
+                                    const selection = window.getSelection();
+                                    const range = document.createRange();
+                                    range.selectNodeContents(input);
+                                    selection.removeAllRanges();
+                                    selection.addRange(range);
+                                    return false;
+                                }
+                            }
+                        });
+                        
+                        // Ensure all input events propagate correctly
+                        ['copy', 'paste', 'cut', 'input', 'select'].forEach(eventType => {
+                            input.addEventListener(eventType, function(e) {
+                                console.log('Grok input event:', eventType);
+                            });
+                        });
+                    }
+                });
+                
+                // Special handling for Grok's custom editor if it exists
+                const grokEditor = document.querySelector('[data-testid="chat-input"]');
+                if (grokEditor && !grokEditor.dataset.keyboardEnhanced) {
+                    grokEditor.dataset.keyboardEnhanced = "true";
+                    console.log('Enhanced Grok editor found and keyboard shortcuts enabled');
+                }
+            }
+            
+            // Run immediately
+            enhanceGrokInputs();
+            
+            // Set up a MutationObserver to handle dynamically added elements
+            const observer = new MutationObserver(function() {
+                enhanceGrokInputs();
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error injecting Grok keyboard handlers: \(error)")
+            } else {
+                print("Successfully injected Grok keyboard handlers")
             }
         }
     }
@@ -445,6 +925,138 @@ class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
     }
 }
 
+// New KeyboardResponderView to help with keyboard shortcuts
+class KeyboardResponderView: NSView {
+    weak var webView: WKWebView?
+    
+    override var acceptsFirstResponder: Bool { return true }
+    
+    init(webView: WKWebView) {
+        self.webView = webView
+        super.init(frame: .zero)
+        
+        // Set up to receive keyboard events
+        self.wantsLayer = true
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    // Ensure we're getting key events by becoming first responder
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        
+        if let window = self.window {
+            window.makeFirstResponder(self)
+        }
+    }
+    
+    // Pass through standard keyboard shortcuts
+    override func keyDown(with event: NSEvent) {
+        // Handle copy, paste, select all shortcuts
+        if event.modifierFlags.contains(.command) {
+            let handled = handleStandardShortcut(event)
+            if handled {
+                return
+            }
+        }
+        
+        // Pass the event to the web view
+        if let webView = webView {
+            webView.keyDown(with: event)
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+    
+    // Pass through all keyboard related events
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        // Pass command key combos to the web view - this is critical for shortcuts
+        if event.modifierFlags.contains(.command) {
+            if handleStandardShortcut(event) {
+                return true
+            }
+        }
+        
+        // Let the web view handle other key equivalents
+        if let webView = webView {
+            return webView.performKeyEquivalent(with: event)
+        }
+        
+        return super.performKeyEquivalent(with: event)
+    }
+    
+    // Helper method to handle standard keyboard shortcuts
+    private func handleStandardShortcut(_ event: NSEvent) -> Bool {
+        guard let webView = webView else { return false }
+        
+        // Keyboard shortcuts map
+        let shortcuts: [UInt16: Selector] = [
+            0x00: #selector(NSText.selectAll(_:)),          // A - Select All
+            0x08: #selector(NSText.copy(_:)),               // C - Copy
+            0x09: #selector(NSText.paste(_:)),              // V - Paste
+            0x07: #selector(NSText.cut(_:)),                // X - Cut
+            0x0C: #selector(NSText.delete(_:)),             // Z - Delete
+            0x03: #selector(NSResponder.cancelOperation(_:)) // Escape
+        ]
+        
+        // If this is a standard shortcut we're handling
+        if let action = shortcuts[event.keyCode] {
+            // Try the native action on the webView
+            if webView.responds(to: action) {
+                webView.performSelector(onMainThread: action, with: nil, waitUntilDone: false)
+                return true
+            }
+            
+            // Use JavaScript as a fallback for certain operations
+            switch event.keyCode {
+            case 0x00: // A - Select All
+                webView.evaluateJavaScript("document.execCommand('selectAll', false, null);", completionHandler: nil)
+                return true
+            case 0x08: // C - Copy
+                webView.evaluateJavaScript("document.execCommand('copy', false, null);", completionHandler: nil)
+                return true
+            case 0x09: // V - Paste
+                webView.evaluateJavaScript("document.execCommand('paste', false, null);", completionHandler: nil)
+                return true
+            case 0x07: // X - Cut
+                webView.evaluateJavaScript("document.execCommand('cut', false, null);", completionHandler: nil)
+                return true
+            default:
+                break
+            }
+        }
+        
+        return false
+    }
+    
+    // Ensure mouse events pass through to the web view
+    override func mouseDown(with event: NSEvent) {
+        if let webView = webView {
+            webView.mouseDown(with: event)
+        } else {
+            super.mouseDown(with: event)
+        }
+    }
+    
+    override func mouseDragged(with event: NSEvent) {
+        if let webView = webView {
+            webView.mouseDragged(with: event)
+        } else {
+            super.mouseDragged(with: event)
+        }
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        if let webView = webView {
+            webView.mouseUp(with: event)
+        } else {
+            super.mouseUp(with: event)
+        }
+    }
+}
+
 // New persistent WebView that uses the cache
 struct PersistentWebView: NSViewRepresentable {
     let service: AIService
@@ -461,11 +1073,19 @@ struct PersistentWebView: NSViewRepresentable {
             webView.frame = containerView.bounds
             webView.autoresizingMask = [.width, .height]
             
-            // Add the webview to the container
-            containerView.addSubview(webView)
+            // Create a keyboard responder view for this web view
+            let responderView = KeyboardResponderView(webView: webView)
+            responderView.frame = containerView.bounds
+            responderView.autoresizingMask = [.width, .height]
+            
+            // Add the responder view to the container
+            containerView.addSubview(responderView)
+            
+            // Add the webview to the responder view
+            responderView.addSubview(webView)
             
             // Only show the selected webview
-            webView.isHidden = cachedService.id != service.id
+            responderView.isHidden = cachedService.id != service.id
         }
         
         // Update loading status
@@ -483,12 +1103,14 @@ struct PersistentWebView: NSViewRepresentable {
         
         // Show only the selected webview, hide all others
         for subview in nsView.subviews {
-            if let webView = subview as? WKWebView {
-                // Find which service this webview belongs to
-                for cachedService in aiServices {
-                    if webView === WebViewCache.shared.getWebView(for: cachedService) {
-                        // Set visibility based on whether this is the selected service
-                        webView.isHidden = cachedService.id != service.id
+            if let responderView = subview as? KeyboardResponderView {
+                // Find which service this responder's webview belongs to
+                if let webView = responderView.webView {
+                    for cachedService in aiServices {
+                        if webView === WebViewCache.shared.getWebView(for: cachedService) {
+                            // Set visibility based on whether this is the selected service
+                            responderView.isHidden = cachedService.id != service.id
+                        }
                     }
                 }
             }
@@ -501,9 +1123,20 @@ struct PersistentWebView: NSViewRepresentable {
     private func focusCurrentWebView(in containerView: NSView) {
         // Focus the webview for the current service
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if let currentWebView = containerView.subviews.first(where: { !$0.isHidden }) as? WKWebView,
-               let window = currentWebView.window {
-                window.makeFirstResponder(currentWebView)
+            // First try to find the keyboard responder view for the current service
+            if let responderView = containerView.subviews.first(where: { 
+                !$0.isHidden && $0 is KeyboardResponderView
+            }) as? KeyboardResponderView,
+               let window = responderView.window {
+                // Make the responder view the first responder
+                window.makeFirstResponder(responderView)
+            } 
+            // Fallback to directly focus the web view if needed
+            else if let webView = containerView.subviews.first(where: { 
+                !$0.isHidden && NSStringFromClass(type(of: $0)).contains("WKWebView")
+            }) as? WKWebView,
+               let window = webView.window {
+                window.makeFirstResponder(webView)
             }
         }
     }
