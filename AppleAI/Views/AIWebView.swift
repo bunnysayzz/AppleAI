@@ -439,7 +439,8 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
             self.isFilePickerActive = false
             
             if result == .OK {
-                let urls = openPanel.urls
+                // Using _ to explicitly ignore the value since we handle files through the browser's file input
+                _ = openPanel.urls
                 
                 // Focus the webView first
                 if let window = webView.window {
@@ -952,39 +953,99 @@ class KeyboardResponderView: NSView {
         }
     }
     
-    // Pass through standard keyboard shortcuts
+    // Handle all key down events and prevent unexpected app quitting
     override func keyDown(with event: NSEvent) {
-        // Handle copy, paste, select all shortcuts
+        // Allow only specific command key combinations to pass through
         if event.modifierFlags.contains(.command) {
-            let handled = handleStandardShortcut(event)
-            if handled {
+            // Handle Command+E (toggle window) at the application level
+            if event.keyCode == 0x0E { // E key
+                // Skip this as it's handled by the global shortcut monitor
+                super.keyDown(with: event)
                 return
+            }
+            
+            // Handle standard shortcuts (copy, paste, select all)
+            let allowedShortcuts: [UInt16] = [
+                0x00, // A - Select All
+                0x08, // C - Copy
+                0x09, // V - Paste
+            ]
+            
+            if allowedShortcuts.contains(event.keyCode) {
+                if handleStandardShortcut(event) {
+                    return
+                }
             }
         }
         
-        // Pass the event to the web view
-        if let webView = webView {
-            webView.keyDown(with: event)
+        // Check if the webView is the current first responder or its child is
+        if isWebViewOrChildFirstResponder() {
+            // If the webView or its child has focus, pass all keyboard events to it
+            if let webView = webView {
+                webView.keyDown(with: event)
+            } else {
+                super.keyDown(with: event)
+            }
         } else {
-            super.keyDown(with: event)
+            // If webView doesn't have focus, instead of just preventing app quitting,
+            // toggle off the window for any key press
+            if let window = self.window {
+                // Find MenuBarManager instance to toggle the window
+                if let appDelegate = NSApp.delegate as? AppDelegate {
+                    appDelegate.menuBarManager.perform(#selector(MenuBarManager.togglePopupWindow))
+                } else {
+                    // Fallback if we can't find the menuBarManager
+                    window.orderOut(nil)
+                }
+            }
+            
+            // Consume the event without doing anything for all other keys
+            return
         }
     }
     
-    // Pass through all keyboard related events
+    // Handle key equivalents (keyboard shortcuts)
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        // Pass command key combos to the web view - this is critical for shortcuts
+        // Always allow Command+E (toggle window) - handled at app level
+        if event.modifierFlags.contains(.command) && event.keyCode == 0x0E {
+            return super.performKeyEquivalent(with: event)
+        }
+        
+        // Allow only specific command key combinations
         if event.modifierFlags.contains(.command) {
-            if handleStandardShortcut(event) {
-                return true
+            let allowedShortcuts: [UInt16] = [
+                0x00, // A - Select All
+                0x08, // C - Copy
+                0x09, // V - Paste
+            ]
+            
+            if allowedShortcuts.contains(event.keyCode) {
+                if handleStandardShortcut(event) {
+                    return true
+                }
             }
         }
         
-        // Let the web view handle other key equivalents
-        if let webView = webView {
-            return webView.performKeyEquivalent(with: event)
+        // Check if the webView is the current first responder or its child is
+        if isWebViewOrChildFirstResponder() {
+            // If the webView or its child has focus, pass key equivalents to it
+            if let webView = webView {
+                return webView.performKeyEquivalent(with: event)
+            }
         }
         
-        return super.performKeyEquivalent(with: event)
+        // For all other key combinations, toggle off the window
+        if let window = self.window {
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.menuBarManager.perform(#selector(MenuBarManager.togglePopupWindow))
+            } else {
+                // Fallback if we can't find the menuBarManager
+                window.orderOut(nil)
+            }
+        }
+        
+        // Return true to indicate we've handled the event
+        return true
     }
     
     // Helper method to handle standard keyboard shortcuts
@@ -996,9 +1057,6 @@ class KeyboardResponderView: NSView {
             0x00: #selector(NSText.selectAll(_:)),          // A - Select All
             0x08: #selector(NSText.copy(_:)),               // C - Copy
             0x09: #selector(NSText.paste(_:)),              // V - Paste
-            0x07: #selector(NSText.cut(_:)),                // X - Cut
-            0x0C: #selector(NSText.delete(_:)),             // Z - Delete
-            0x03: #selector(NSResponder.cancelOperation(_:)) // Escape
         ]
         
         // If this is a standard shortcut we're handling
@@ -1020,12 +1078,37 @@ class KeyboardResponderView: NSView {
             case 0x09: // V - Paste
                 webView.evaluateJavaScript("document.execCommand('paste', false, null);", completionHandler: nil)
                 return true
-            case 0x07: // X - Cut
-                webView.evaluateJavaScript("document.execCommand('cut', false, null);", completionHandler: nil)
-                return true
             default:
                 break
             }
+        }
+        
+        return false
+    }
+    
+    // Helper method to check if the webView or its child is the first responder
+    private func isWebViewOrChildFirstResponder() -> Bool {
+        guard let window = self.window, let webView = self.webView else {
+            return false
+        }
+        
+        // Get the current first responder
+        guard let firstResponder = window.firstResponder else {
+            return false
+        }
+        
+        // Check if the first responder is the webView or a child of it
+        if firstResponder === webView {
+            return true
+        }
+        
+        // Check if the first responder is a descendant of the webView
+        var responder: NSResponder? = firstResponder
+        while let nextResponder = responder?.nextResponder {
+            if nextResponder === webView {
+                return true
+            }
+            responder = nextResponder
         }
         
         return false
@@ -1065,6 +1148,8 @@ struct PersistentWebView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         // Create a container view
         let containerView = NSView(frame: .zero)
+        containerView.wantsLayer = true
+        containerView.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
         
         // Create all webviews for all services and add them to the container
         // But only show the selected one
@@ -1094,6 +1179,15 @@ struct PersistentWebView: NSViewRepresentable {
         // Focus the current webview
         focusCurrentWebView(in: containerView)
         
+        // Add notification observer for window focus changes
+        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { notification in
+            if let window = notification.object as? NSWindow, 
+               window.contentView?.isDescendant(of: containerView) == true {
+                // When window becomes key, focus the webview
+                focusCurrentWebView(in: containerView)
+            }
+        }
+        
         return containerView
     }
     
@@ -1102,41 +1196,117 @@ struct PersistentWebView: NSViewRepresentable {
         isLoading = WebViewCache.shared.loadingStates[service.id] ?? true
         
         // Show only the selected webview, hide all others
+        var didUpdateVisibility = false
         for subview in nsView.subviews {
             if let responderView = subview as? KeyboardResponderView {
                 // Find which service this responder's webview belongs to
                 if let webView = responderView.webView {
                     for cachedService in aiServices {
                         if webView === WebViewCache.shared.getWebView(for: cachedService) {
+                            // Check if we're changing visibility
+                            let shouldBeVisible = cachedService.id == service.id
+                            if responderView.isHidden == shouldBeVisible {
+                                didUpdateVisibility = true
+                            }
                             // Set visibility based on whether this is the selected service
-                            responderView.isHidden = cachedService.id != service.id
+                            responderView.isHidden = !shouldBeVisible
                         }
                     }
                 }
             }
         }
         
-        // Focus the current webview
-        focusCurrentWebView(in: nsView)
+        // Focus the current webview, with added delays if we just changed visibility
+        if didUpdateVisibility {
+            // Multiple attempts with increasing delays to handle race conditions
+            let delays: [TimeInterval] = [0.1, 0.3, 0.6, 1.0]
+            for delay in delays {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    focusCurrentWebView(in: nsView)
+                }
+            }
+        } else {
+            // Single attempt if we didn't change visibility
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                focusCurrentWebView(in: nsView)
+            }
+        }
     }
     
     private func focusCurrentWebView(in containerView: NSView) {
-        // Focus the webview for the current service
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // First try to find the keyboard responder view for the current service
-            if let responderView = containerView.subviews.first(where: { 
-                !$0.isHidden && $0 is KeyboardResponderView
-            }) as? KeyboardResponderView,
-               let window = responderView.window {
+        // Get the window containing the container view
+        guard let window = containerView.window else { return }
+        
+        var foundResponder = false
+        var foundWebView: NSView? = nil
+        
+        // Try to find the visible KeyboardResponderView first
+        for subview in containerView.subviews where !subview.isHidden {
+            if let responderView = subview as? KeyboardResponderView {
                 // Make the responder view the first responder
                 window.makeFirstResponder(responderView)
-            } 
-            // Fallback to directly focus the web view if needed
-            else if let webView = containerView.subviews.first(where: { 
-                !$0.isHidden && NSStringFromClass(type(of: $0)).contains("WKWebView")
-            }) as? WKWebView,
-               let window = webView.window {
+                foundResponder = true
+                break
+            }
+        }
+        
+        // If we couldn't find a responder view, try to find the visible WKWebView
+        if !foundResponder {
+            // Recursive function to find WKWebView in the view hierarchy
+            func findWebView(in view: NSView) -> NSView? {
+                if NSStringFromClass(type(of: view)).contains("WKWebView") {
+                    return view
+                }
+                
+                for subview in view.subviews where !subview.isHidden {
+                    if let webView = findWebView(in: subview) {
+                        return webView
+                    }
+                }
+                
+                return nil
+            }
+            
+            // Find the visible WKWebView
+            foundWebView = findWebView(in: containerView)
+            
+            // Make it first responder if found
+            if let webView = foundWebView {
                 window.makeFirstResponder(webView)
+            }
+        }
+        
+        // If all else fails, try to get the webview directly from the cache
+        if !foundResponder && foundWebView == nil {
+            let webView = WebViewCache.shared.getWebView(for: service)
+            window.makeFirstResponder(webView)
+            
+            // Forcefully inject focus into the webview using JavaScript (last resort)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                let focusScript = """
+                (function() {
+                    // Try to focus any input field
+                    var inputs = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+                    if (inputs.length > 0) {
+                        inputs[0].focus();
+                        return true;
+                    }
+                    
+                    // If no input found, try to click on the document body
+                    if (document.body) {
+                        document.body.click();
+                        return true;
+                    }
+                    
+                    return false;
+                })();
+                """
+                
+                webView.evaluateJavaScript(focusScript) { (result, error) in
+                    if let error = error {
+                        print("Error focusing webview: \(error)")
+                    }
+                }
             }
         }
     }

@@ -208,6 +208,55 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         openPopupWindowWithService(service)
     }
     
+    @objc internal func windowDidBecomeKey(_ notification: Notification) {
+        // Ensure the web view becomes first responder when the window becomes key
+        if let window = notification.object as? NSWindow {
+            // Recursively search for WKWebView and make it first responder
+            // Use a sequence of timed attempts to ensure views are ready
+            makeWebViewFirstResponderWithRetry(window: window)
+        }
+    }
+    
+    private func makeWebViewFirstResponderWithRetry(window: NSWindow) {
+        // Multiple attempts at different times to handle race conditions
+        let delays: [TimeInterval] = [0.1, 0.3, 0.5, 0.8]
+        
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.findAndFocusWebView(in: window.contentView)
+            }
+        }
+    }
+    
+    private func findAndFocusWebView(in view: NSView?) {
+        guard let view = view else { return }
+        
+        // Try to find KeyboardResponderView first (best option)
+        if NSStringFromClass(type(of: view)).contains("KeyboardResponderView") {
+            DispatchQueue.main.async {
+                if let window = view.window {
+                    window.makeFirstResponder(view)
+                }
+            }
+            return
+        }
+        
+        // Then try to find WKWebView
+        if NSStringFromClass(type(of: view)).contains("WKWebView") {
+            DispatchQueue.main.async {
+                if let window = view.window {
+                    window.makeFirstResponder(view)
+                }
+            }
+            return
+        }
+        
+        // Recursively check subviews
+        for subview in view.subviews {
+            findAndFocusWebView(in: subview)
+        }
+    }
+    
     private func openPopupWindow() {
         // If window already exists, just show it
         if let window = popupWindow {
@@ -242,6 +291,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         window.allowsToolTipsWhenApplicationIsInactive = true
         window.hidesOnDeactivate = false
         
+        // Set up keyboard event monitoring for this window to intercept problematic keys
+        setupWindowKeyEventMonitoring(window)
+        
         // Set the window delegate to handle close button
         window.delegate = self
         
@@ -269,33 +321,54 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         )
     }
     
-    @objc internal func windowDidBecomeKey(_ notification: Notification) {
-        // Ensure the web view becomes first responder when the window becomes key
-        if let window = notification.object as? NSWindow {
-            // Recursively search for WKWebView and make it first responder
-            // Use a small delay to ensure views are ready
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.findAndFocusWebView(in: window.contentView)
+    // Add a key event monitor to prevent problematic keys from causing the app to quit
+    private func setupWindowKeyEventMonitoring(_ window: NSWindow) {
+        // Set up a key down monitor for the window
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // If event is not for our window, pass it through
+            if event.window != window {
+                return event
             }
-        }
-    }
-    
-    private func findAndFocusWebView(in view: NSView?) {
-        guard let view = view else { return }
-        
-        // Check if this view is a WKWebView
-        if NSStringFromClass(type(of: view)).contains("WKWebView") {
-            DispatchQueue.main.async {
-                if let window = view.window {
-                    window.makeFirstResponder(view)
-                }
+            
+            // Allow Command+E (toggle window)
+            if event.modifierFlags.contains(.command) && event.keyCode == 0x0E {
+                return event
             }
-            return
-        }
-        
-        // Recursively check subviews
-        for subview in view.subviews {
-            findAndFocusWebView(in: subview)
+            
+            // Allow standard keyboard shortcuts (copy, paste, select all)
+            let allowedCmdShortcuts: [UInt16] = [
+                0x00, // A - Select All
+                0x08, // C - Copy
+                0x09  // V - Paste
+            ]
+            
+            if event.modifierFlags.contains(.command) && allowedCmdShortcuts.contains(event.keyCode) {
+                return event
+            }
+            
+            // Get the first responder
+            guard let firstResponder = window.firstResponder else {
+                // If no first responder, toggle the window off instead of letting the event propagate
+                self.closePopupWindow()
+                return nil // Consume the event
+            }
+            
+            // Check if the first responder is a text field, KeyboardResponderView, or a WKWebView
+            let firstResponderClass = NSStringFromClass(type(of: firstResponder))
+            let isInput = firstResponderClass.contains("WKWebView") ||
+                          firstResponderClass.contains("KeyboardResponderView") ||
+                          firstResponderClass.contains("NSTextField") ||
+                          firstResponderClass.contains("NSTextView")
+            
+            if isInput {
+                // Let the input handle all keystrokes
+                return event
+            } else {
+                // For non-input first responders, toggle the window off instead of letting the event propagate
+                // This prevents any key from quitting the app
+                self.closePopupWindow()
+                return nil // Consume the event
+            }
         }
     }
     
@@ -328,6 +401,9 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             window.initialFirstResponder = nil // Let SwiftUI handle first responder
             window.allowsToolTipsWhenApplicationIsInactive = true
             window.hidesOnDeactivate = false
+            
+            // Set up keyboard event monitoring
+            setupWindowKeyEventMonitoring(window)
             
             // Set the window delegate to handle close button
             window.delegate = self
@@ -405,13 +481,8 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         // Make the window active and bring app to foreground
         NSApp.activate(ignoringOtherApps: true)
         
-        // Attempt to set focus to the webview after a short delay to ensure all views are loaded
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if let contentView = window.contentView {
-                // Try to find the WKWebView within the view hierarchy and make it first responder
-                self.makeWebViewFirstResponder(contentView)
-            }
-        }
+        // Attempt to set focus to the webview with multiple timed attempts
+        makeWebViewFirstResponderWithRetry(window: window)
         
         // Setup window level observer to update when alwaysOnTop changes
         setupWindowLevelObserver(for: window)
@@ -439,22 +510,6 @@ class MenuBarManager: NSObject, NSMenuDelegate {
             context.duration = 0.2
             window.animator().level = PreferencesManager.shared.alwaysOnTop ? .floating : .normal
         })
-    }
-    
-    // Helper method to find a WKWebView in the view hierarchy and make it first responder
-    private func makeWebViewFirstResponder(_ view: NSView) {
-        // Check if this view is a WKWebView or contains "WebView" in its class name
-        if NSStringFromClass(type(of: view)).contains("WKWebView") {
-            if let window = view.window {
-                window.makeFirstResponder(view)
-                return
-            }
-        }
-        
-        // Recursively search through subviews
-        for subview in view.subviews {
-            makeWebViewFirstResponder(subview)
-        }
     }
     
     @objc func showPreferences() {

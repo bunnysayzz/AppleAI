@@ -38,9 +38,7 @@ struct CompactChatView: View {
                                         selectedService = service
                                     }
                                     // When service changes, ensure we refocus the webview after a short delay
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                        focusWebView()
-                                    }
+                                    ensureWebViewFocus(delay: 0.5)
                                 }
                             )
                             .id(service.id) // Ensure ForEach updates properly
@@ -66,43 +64,78 @@ struct CompactChatView: View {
             PersistentWebView(service: selectedService, isLoading: $isLoading)
                 .background(KeyboardFocusModifier(onAppear: {
                     // When web view appears, set up a delayed action to focus the view
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        focusWebView()
-                    }
+                    ensureWebViewFocus(delay: 0.5)
                 }))
         }
         .frame(width: 400, height: 600)
         .onAppear {
             // Set up periodic focus checks
             setupPeriodicFocusCheck()
+            // Ensure focus immediately
+            ensureWebViewFocus(delay: 0.2)
         }
     }
     
     // Function to periodically check and ensure focus is on the webview
     private func setupPeriodicFocusCheck() {
-        // Create a timer that checks focus every 2 seconds
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
+        // Create a timer that checks focus every 1 second
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
             guard let window = NSApplication.shared.keyWindow,
                   window.isVisible else {
                 return
             }
             
             // Check if the window is key and if first responder is a webview
-            if window.isKeyWindow,
-               let firstResponder = window.firstResponder,
-               !NSStringFromClass(type(of: firstResponder)).contains("WKWebView") {
-                focusWebView()
+            if window.isKeyWindow {
+                if let firstResponder = window.firstResponder {
+                    let className = NSStringFromClass(type(of: firstResponder))
+                    // If the first responder is not a WKWebView or KeyboardResponderView, try to focus the webview
+                    if !className.contains("WKWebView") && !className.contains("KeyboardResponderView") {
+                        ensureWebViewFocus(delay: 0.0)
+                    }
+                } else {
+                    // If there's no first responder, try to focus the webview
+                    ensureWebViewFocus(delay: 0.0)
+                }
             }
         }
     }
     
-    // Function to help focus the web view
+    // Enhanced function to help focus the web view with multiple attempts
+    private func ensureWebViewFocus(delay: TimeInterval) {
+        // Initial attempt with the specified delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            focusWebView()
+            
+            // Make additional attempts with increasing delays to handle race conditions
+            // This helps when the WebView might not be fully loaded yet
+            let additionalDelays: [TimeInterval] = [0.3, 0.7, 1.0]
+            for (index, additionalDelay) in additionalDelays.enumerated() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay + additionalDelay) {
+                    focusWebView()
+                    
+                    // On the last attempt, use an alternative focus method as a fallback
+                    if index == additionalDelays.count - 1 {
+                        alternativeFocusMethod()
+                    }
+                }
+            }
+        }
+    }
+    
+    // Function to help focus the web view - try to find any WKWebView
     private func focusWebView() {
         guard let window = NSApplication.shared.keyWindow else { return }
         
         // Find any WKWebView in the view hierarchy and make it first responder
         func findAndFocusWebView(in view: NSView) -> Bool {
-            // Check if this view is a WKWebView
+            // Check if this view is a KeyboardResponderView first (preferred)
+            if NSStringFromClass(type(of: view)).contains("KeyboardResponderView") {
+                window.makeFirstResponder(view)
+                return true
+            }
+            
+            // Otherwise check if it's a WKWebView
             if NSStringFromClass(type(of: view)).contains("WKWebView") {
                 window.makeFirstResponder(view)
                 return true
@@ -120,7 +153,64 @@ struct CompactChatView: View {
         
         // Start searching from the window's content view
         if let contentView = window.contentView {
-            _ = findAndFocusWebView(in: contentView) // Use underscore to indicate intentional ignoring of result
+            _ = findAndFocusWebView(in: contentView)
+        }
+    }
+    
+    // Alternative method to focus the webview using the WebViewCache
+    private func alternativeFocusMethod() {
+        // Get the webview from the cache and focus it directly
+        let webView = WebViewCache.shared.getWebView(for: selectedService)
+        
+        if let window = webView.window {
+            window.makeFirstResponder(webView)
+            
+            // If that doesn't work, try to simulate a click in the webview
+            // to activate any input fields
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                // Calculate center point of webview
+                let centerPoint = NSPoint(
+                    x: webView.bounds.midX,
+                    y: webView.bounds.midY
+                )
+                
+                // Convert to window coordinates
+                let windowPoint = webView.convert(centerPoint, to: nil)
+                
+                // Create a synthetic mouse event
+                let mouseDownEvent = NSEvent.mouseEvent(
+                    with: .leftMouseDown,
+                    location: windowPoint,
+                    modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: window.windowNumber,
+                    context: nil,
+                    eventNumber: 0,
+                    clickCount: 1,
+                    pressure: 0
+                )
+                
+                if let mouseDownEvent = mouseDownEvent {
+                    webView.mouseDown(with: mouseDownEvent)
+                    
+                    // Create a matching mouse up event
+                    let mouseUpEvent = NSEvent.mouseEvent(
+                        with: .leftMouseUp,
+                        location: windowPoint,
+                        modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime,
+                        windowNumber: window.windowNumber,
+                        context: nil,
+                        eventNumber: 0,
+                        clickCount: 1,
+                        pressure: 0
+                    )
+                    
+                    if let mouseUpEvent = mouseUpEvent {
+                        webView.mouseUp(with: mouseUpEvent)
+                    }
+                }
+            }
         }
     }
 }
