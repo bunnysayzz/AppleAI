@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+@_exported import WebKit
 
 @main
 struct AIToolsApp: App {
@@ -15,6 +16,7 @@ struct AIToolsApp: App {
 // App delegate to handle application lifecycle
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager!
+    private var microphoneMonitorTimer: Timer?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set activation policy to accessory (menu bar app)
@@ -28,46 +30,194 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupMainMenu()
         
         // Register for global keyboard shortcut at application level
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            // Only handle events when they're not in our webview window
-            guard let self = self, let window = event.window else {
-                // If no window (global event), only pass through Command+E
-                if event.modifierFlags.contains(.command) && 
-                   !event.modifierFlags.contains(.option) && 
-                   !event.modifierFlags.contains(.control) && 
-                   !event.modifierFlags.contains(.shift) &&
-                   event.keyCode == UInt16(0x0E) { // E key
+        setupKeyboardEvents()
+        
+        // Prevent app termination by adding a persistent window
+        createPersistentWindow()
+        
+        // Register for termination notification to manually handle app termination
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(appWillTerminate),
+            name: NSWorkspace.willPowerOffNotification,
+            object: nil
+        )
+        
+        // Ensure microphone is stopped at app startup
+        stopMicrophoneUsage()
+        
+        // Start a periodic microphone monitor to prevent the microphone
+        // from staying active when it shouldn't be
+        startMicrophoneMonitor()
+    }
+    
+    // Stop any microphone usage to ensure privacy
+    private func stopMicrophoneUsage() {
+        // Use WebViewCache to stop all audio resources
+        let webViewCache = WebViewCache.shared
+        DispatchQueue.main.async {
+            webViewCache.stopAllMicrophoneUse()
+        }
+    }
+    
+    // Start a periodic monitor to check for and stop microphone usage when inactive
+    private func startMicrophoneMonitor() {
+        // Cancel any existing timer
+        microphoneMonitorTimer?.invalidate()
+        
+        // Create a new timer that checks microphone status every 3 seconds
+        microphoneMonitorTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.checkAndStopInactiveMicrophone()
+        }
+    }
+    
+    // Check if microphone is active but should be inactive, and stop it if needed
+    private func checkAndStopInactiveMicrophone() {
+        // Access WebViewCache instance
+        let webViewCache = WebViewCache.shared
+        
+        // Instead of accessing private webViews dictionary, use a shared approach
+        // to stop all microphone usage first
+        webViewCache.stopAllMicrophoneUse()
+        
+        // Then perform a scheduled check to make sure all audio is actually stopped
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // Run JavaScript in the current web view to check status
+            if let currentWebView = self.getCurrentActiveWebView() {
+                currentWebView.evaluateJavaScript("""
+                (function() {
+                    // Check if there are any active audio tracks in this page
+                    let hasActiveAudio = false;
                     
-                    self?.menuBarManager?.perform(#selector(MenuBarManager.togglePopupWindow))
-                    return nil // Consume the event
-                }
-                
-                // For other global key events, let them pass through to prevent app quit
-                return event
-            }
-            
-            // For events in our app windows, handle Command+E and pass others through
-            // Since we don't have direct access to popupWindow, we'll check if the window is the one we manage
-            if let window = event.window, window.title == "Apple AI" {
-                // This event is likely in our popup window - it will be handled by the window's monitor
-                return event
-            } else {
-                // Handle Command+E for any window to toggle the popup
-                if event.modifierFlags.contains(.command) && 
-                   !event.modifierFlags.contains(.option) && 
-                   !event.modifierFlags.contains(.control) && 
-                   !event.modifierFlags.contains(.shift) &&
-                   event.keyCode == UInt16(0x0E) { // E key
+                    // Check all active audio streams
+                    if (window.activeAudioStreams && window.activeAudioStreams.length > 0) {
+                        for (const stream of window.activeAudioStreams) {
+                            if (stream && typeof stream.getAudioTracks === 'function') {
+                                const audioTracks = stream.getAudioTracks();
+                                if (audioTracks.some(track => track.readyState === 'live')) {
+                                    hasActiveAudio = true;
+                                }
+                            }
+                        }
+                    }
                     
-                    self.menuBarManager?.perform(#selector(MenuBarManager.togglePopupWindow))
-                    return nil // Consume the event
+                    // If we still have active audio, stop it forcefully
+                    if (hasActiveAudio) {
+                        // Force stop all audio tracks
+                        console.log('Force stopping audio tracks');
+                        if (window.activeAudioStreams) {
+                            window.activeAudioStreams.forEach(stream => {
+                                if (stream && typeof stream.getTracks === 'function') {
+                                    stream.getTracks().forEach(track => {
+                                        if (track.kind === 'audio') {
+                                            track.stop();
+                                            track.enabled = false;
+                                        }
+                                    });
+                                }
+                            });
+                            
+                            // Clear active streams array
+                            window.activeAudioStreams = [];
+                        }
+                    }
+                    
+                    return hasActiveAudio;
+                })();
+                """) { (result, error) in
+                    if let error = error {
+                        print("Error checking audio status: \(error)")
+                    } else if let hasActiveAudio = result as? Bool, hasActiveAudio {
+                        print("Detected active audio and stopped it forcefully")
+                    }
                 }
             }
-            
-            return event // Pass other events through
+        }
+    }
+    
+    // Helper to get the current active web view
+    private func getCurrentActiveWebView() -> WKWebView? {
+        // Find the main window
+        guard let mainWindow = NSApp.windows.first(where: { $0.title == "Apple AI" }) else {
+            return nil
         }
         
-        // Add another monitor for key equivalents (keyboard shortcuts)
+        // Try to find the WKWebView within the window hierarchy
+        func findWebView(in view: NSView?) -> WKWebView? {
+            guard let view = view else { return nil }
+            
+            // Check if this view is a WKWebView
+            if let webView = view as? WKWebView {
+                return webView
+            }
+            
+            // Otherwise, recursively search in subviews
+            for subview in view.subviews {
+                if let webView = findWebView(in: subview) {
+                    return webView
+                }
+            }
+            
+            return nil
+        }
+        
+        return findWebView(in: mainWindow.contentView)
+    }
+    
+    // This is critical - it prevents the app from terminating when all windows are closed
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
+    }
+    
+    // Add a hidden persistent window to prevent app termination
+    private func createPersistentWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
+            styleMask: [],
+            backing: .buffered,
+            defer: true
+        )
+        window.isReleasedWhenClosed = false
+        window.orderOut(nil)
+    }
+    
+    @objc func appWillTerminate() {
+        // Perform cleanup if needed
+        print("App is terminating")
+        
+        // Invalidate the microphone monitor timer
+        microphoneMonitorTimer?.invalidate()
+        
+        // Stop microphone usage when app is terminating
+        stopMicrophoneUsage()
+    }
+    
+    // This method is called when the user attempts to quit your app
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Invalidate the microphone monitor timer
+        microphoneMonitorTimer?.invalidate()
+        
+        // Stop microphone usage before terminating
+        stopMicrophoneUsage()
+        
+        // Allow termination
+        return .terminateNow
+    }
+    
+    // Handle app entering background
+    func applicationDidResignActive(_ notification: Notification) {
+        // Stop microphone when app goes into background
+        stopMicrophoneUsage()
+    }
+    
+    // Handle when app is hidden
+    func applicationWillHide(_ notification: Notification) {
+        // Stop microphone when app is hidden
+        stopMicrophoneUsage()
+    }
+    
+    private func setupKeyboardEvents() {
+        // Monitor keyboard events for text input fields
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             // Allow standard keyboard shortcuts (copy, paste, select all) 
             // for text fields in any window
@@ -98,46 +248,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Return the event unmodified for other cases
             return event
         }
-        
-        // Prevent app termination by adding a persistent window
-        createPersistentWindow()
-        
-        // Register for termination notification to manually handle app termination
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(appWillTerminate),
-            name: NSWorkspace.willPowerOffNotification,
-            object: nil
-        )
-    }
-    
-    // This is critical - it prevents the app from terminating when all windows are closed
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return false
-    }
-    
-    // Add a hidden persistent window to prevent app termination
-    private func createPersistentWindow() {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
-            styleMask: [],
-            backing: .buffered,
-            defer: true
-        )
-        window.isReleasedWhenClosed = false
-        window.orderOut(nil)
-    }
-    
-    @objc func appWillTerminate() {
-        // Perform cleanup if needed
-        print("App is terminating")
-    }
-    
-    // This method is called when the user attempts to quit your app
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // You can perform cleanup here or show confirmation dialogs
-        // Return .terminateNow to allow termination, or .terminateCancel to cancel
-        return .terminateNow
     }
     
     private func setupMainMenu() {

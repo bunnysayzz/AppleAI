@@ -25,6 +25,9 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
     // Add currentServiceID property to track the active service
     private var currentServiceID: String? = nil
     
+    // Add microphone monitoring timer
+    private var microphoneMonitorTimer: Timer?
+    
     private override init() {
         super.init()
         // Preload all service webviews on initialization
@@ -34,6 +37,581 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
         DispatchQueue.main.async {
             self.requestMicrophonePermission()
         }
+        
+        // Start microphone monitoring
+        startMicrophoneMonitoring()
+    }
+    
+    deinit {
+        // Clean up all timers
+        for timer in chatGPTTimers.values {
+            timer.invalidate()
+        }
+        
+        // Clean up all keyboard shortcut timers
+        for timer in keyboardShortcutTimers.values {
+            timer.invalidate()
+        }
+        
+        // Stop microphone monitoring
+        stopMicrophoneMonitoring()
+    }
+    
+    // Start monitoring for microphone activity
+    private func startMicrophoneMonitoring() {
+        // Stop existing timer if any
+        stopMicrophoneMonitoring()
+        
+        // Create timer to check microphone usage every 500ms
+        microphoneMonitorTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.checkMicrophoneActivity()
+        }
+    }
+    
+    // Stop microphone monitoring
+    private func stopMicrophoneMonitoring() {
+        microphoneMonitorTimer?.invalidate()
+        microphoneMonitorTimer = nil
+    }
+    
+    // Check if microphone is being used
+    private func checkMicrophoneActivity() {
+        // Skip check if we know voice chat is active and recent
+        if isVoiceChatActive, let lastActivity = lastVoiceActivityTime, 
+           Date().timeIntervalSince(lastActivity) < 2.0 {
+            return
+        }
+        
+        // For each webview, check for active microphone
+        for (_, webView) in webViews {
+            if !webView.isHidden {
+                checkWebViewMicrophoneActivity(webView)
+            }
+        }
+        
+        // If voice chat was marked as active but no activity for a while, stop it
+        if isVoiceChatActive, let lastActivity = lastVoiceActivityTime,
+           Date().timeIntervalSince(lastActivity) > 10.0 {
+            print("No voice activity detected for 10 seconds - stopping microphone")
+            stopAllMicrophoneUse()
+        }
+    }
+    
+    // Check if a specific webview is using the microphone
+    private func checkWebViewMicrophoneActivity(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Check for active audio streams
+            let hasActiveAudio = false;
+            
+            // Check active streams
+            if (window.activeAudioStreams && window.activeAudioStreams.length > 0) {
+                for (const stream of window.activeAudioStreams) {
+                    if (stream && typeof stream.getTracks === 'function') {
+                        const audioTracks = stream.getTracks().filter(track => 
+                            track.kind === 'audio' && track.readyState === 'live'
+                        );
+                        if (audioTracks.length > 0) {
+                            hasActiveAudio = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Also check for voice UI
+            let voiceChatUIVisible = false;
+            
+            // ChatGPT voice UI
+            const chatGptUI = document.querySelectorAll('[data-testid="voice-message-recording-indicator"], [aria-label="Stop recording"]');
+            if (chatGptUI.length > 0) {
+                voiceChatUIVisible = true;
+            }
+            
+            // Claude voice UI
+            const claudeUI = document.querySelectorAll('.voice-recording, [aria-label="Stop listening"]');
+            if (claudeUI.length > 0) {
+                voiceChatUIVisible = true;
+            }
+            
+            // Generic voice UI
+            const genericUI = document.querySelectorAll('.voice-input-active, .recording-active, [data-voice-active="true"]');
+            if (genericUI.length > 0) {
+                voiceChatUIVisible = true;
+            }
+            
+            return { hasActiveAudio, voiceChatUIVisible };
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { [weak self] (result, error) in
+            guard let self = self else { return }
+            
+            if let result = result as? [String: Bool],
+               let hasActiveAudio = result["hasActiveAudio"],
+               let voiceChatUIVisible = result["voiceChatUIVisible"] {
+                
+                if hasActiveAudio || voiceChatUIVisible {
+                    // We found an active voice chat
+                    self.isVoiceChatActive = true
+                    self.lastVoiceActivityTime = Date()
+                } else if self.isVoiceChatActive {
+                    // Check if it's been inactive for a bit before changing state
+                    if let lastActivity = self.lastVoiceActivityTime,
+                       Date().timeIntervalSince(lastActivity) > 3.0 {
+                        // No activity for 3 seconds, prepare to stop
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            self.stopAllMicrophoneUse()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Function to inject JavaScript to handle microphone permissions
+    private func injectMicrophonePermissionHandlers(_ webView: WKWebView) {
+        // First, check current permission status
+        let currentStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        let statusString = currentStatus == .authorized ? "granted" : "not granted"
+        
+        let script = """
+        (function() {
+            // Store permission status and keep track of attempts
+            if (!window._microphonePermissionState) {
+                window._microphonePermissionState = {
+                    status: '\(statusString)',
+                    requestAttempts: 0,
+                    lastRequestTime: null,
+                    buttonsWithListeners: new Set()
+                };
+            }
+            
+            // Store active audio streams and contexts to stop them later
+            if (!window.activeAudioStreams) {
+                window.activeAudioStreams = [];
+            }
+            
+            // Override getUserMedia method to check our state before requesting
+            const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+            navigator.mediaDevices.getUserMedia = async function(constraints) {
+                console.log('getUserMedia called with constraints:', constraints);
+                
+                // If audio is requested, manage permission state
+                if (constraints && constraints.audio) {
+                    // Don't allow rapid repeated requests
+                    const now = Date.now();
+                    const minTimeBetweenRequests = 5000; // 5 seconds
+                    
+                    if (window._microphonePermissionState.lastRequestTime && 
+                        (now - window._microphonePermissionState.lastRequestTime) < minTimeBetweenRequests) {
+                        console.log('Throttling permission request to prevent repeated dialogs');
+                        
+                        // If we've already been granted permission, proceed
+                        if (window._microphonePermissionState.status === 'granted') {
+                            return await originalGetUserMedia.call(this, constraints);
+                        }
+                        
+                        // Otherwise throw an appropriate error
+                        const error = new DOMException('Permission request throttled to prevent multiple dialogs', 'NotAllowedError');
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'permissionThrottled',
+                            error: error.toString()
+                        });
+                        throw error;
+                    }
+                    
+                    // Update state
+                    window._microphonePermissionState.lastRequestTime = now;
+                    window._microphonePermissionState.requestAttempts++;
+                    
+                    console.log('Requesting microphone permission, attempt #' + window._microphonePermissionState.requestAttempts);
+                    
+                    try {
+                        // This will trigger the permission dialog if needed
+                        const stream = await originalGetUserMedia.call(this, constraints);
+                        
+                        // Store the stream for later cleanup
+                        window.activeAudioStreams.push(stream);
+                        
+                        // Add a listener to detect when the stream ends
+                        stream.addEventListener('inactive', function() {
+                            console.log('Audio stream became inactive');
+                            window.webkit.messageHandlers.mediaPermission.postMessage({
+                                type: 'streamEnded',
+                                reason: 'inactive'
+                            });
+                            
+                            // Remove this stream from active streams
+                            const index = window.activeAudioStreams.indexOf(stream);
+                            if (index !== -1) {
+                                window.activeAudioStreams.splice(index, 1);
+                            }
+                        });
+                        
+                        // Also add listeners to all tracks
+                        stream.getTracks().forEach(track => {
+                            if (track.kind === 'audio') {
+                                track.addEventListener('ended', function() {
+                                    console.log('Audio track ended');
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'streamEnded',
+                                        reason: 'trackEnded'
+                                    });
+                                    
+                                    // Cleanup stream references after a track ends
+                                    const index = window.activeAudioStreams.indexOf(stream);
+                                    if (index !== -1) {
+                                        window.activeAudioStreams.splice(index, 1);
+                                    }
+                                });
+                            }
+                        });
+                        
+                        // Update our state on success
+                        window._microphonePermissionState.status = 'granted';
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'permissionGranted',
+                            source: 'getUserMedia'
+                        });
+                        
+                        // Notify about voice chat activity
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'voiceChatStarted'
+                        });
+                        
+                        return stream;
+                    } catch (error) {
+                        console.error('Error getting microphone access:', error);
+                        
+                        // Update our state on failure
+                        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                            window._microphonePermissionState.status = 'denied';
+                        }
+                        
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'permissionError',
+                            error: error.toString(),
+                            errorName: error.name
+                        });
+                        
+                        throw error;
+                    }
+                }
+                
+                // For other requests, use the original implementation
+                return await originalGetUserMedia.call(this, constraints);
+            };
+            
+            // Add function to stop all audio tracks
+            window.stopAllAudioTracks = function() {
+                console.log('Stopping all audio tracks');
+                
+                if (window.activeAudioStreams) {
+                    window.activeAudioStreams.forEach(stream => {
+                        if (stream && typeof stream.getTracks === 'function') {
+                            stream.getTracks().forEach(track => {
+                                if (track.kind === 'audio') {
+                                    track.stop();
+                                    console.log('Stopped audio track');
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Clear the list
+                    window.activeAudioStreams = [];
+                }
+                
+                // Close any audio contexts
+                if (window.activeAudioContext) {
+                    try {
+                        window.activeAudioContext.close();
+                        window.activeAudioContext = null;
+                    } catch (e) {
+                        console.error('Error closing audio context:', e);
+                    }
+                }
+                
+                return true;
+            };
+            
+            // Also hook into any voice recognition buttons or elements
+            function setupVoiceButtonListeners() {
+                // Look for typical voice input buttons across different AI platforms
+                const voiceSelectors = [
+                    'button[aria-label*="voice"]',
+                    'button[aria-label*="microphone"]',
+                    'button[aria-label*="speech"]',
+                    'button[aria-label*="talk"]',
+                    'button[title*="voice"]',
+                    'button[title*="microphone"]',
+                    'button[title*="speech"]',
+                    'button[title*="talk"]',
+                    'button[class*="voice"]',
+                    'button[class*="microphone"]',
+                    'button[class*="speech"]',
+                    'button[class*="talk"]',
+                    'button[id*="voice"]',
+                    'button[id*="microphone"]',
+                    'button[id*="speech"]',
+                    'button[id*="talk"]',
+                    'svg[aria-label*="voice"]',
+                    'svg[aria-label*="microphone"]',
+                    // ChatGPT specific
+                    'button[data-testid="send-button-with-voice-control"]',
+                    // Add more selectors as needed for specific platforms
+                ];
+                
+                // Try to find any voice input buttons
+                for (const selector of voiceSelectors) {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length > 0) {
+                        elements.forEach(element => {
+                            // Only add listener if it doesn't already have one and we haven't tracked it
+                            if (!element.dataset.micPermissionListener && 
+                                !window._microphonePermissionState.buttonsWithListeners.has(element)) {
+                                
+                                element.dataset.micPermissionListener = 'true';
+                                window._microphonePermissionState.buttonsWithListeners.add(element);
+                                
+                                // Add click listener for voice start
+                                element.addEventListener('click', function(e) {
+                                    console.log('Voice input element clicked');
+                                    
+                                    // Notify native app of button click
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'voiceButtonClicked',
+                                        selector: selector
+                                    });
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                // Also look for stop buttons
+                const stopSelectors = [
+                    'button[aria-label*="stop"]',
+                    'button[title*="stop"]',
+                    'button[aria-label*="cancel"]',
+                    'button[title*="cancel"]',
+                    'button.cancel',
+                    'button.stop'
+                ];
+                
+                for (const selector of stopSelectors) {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length > 0) {
+                        elements.forEach(element => {
+                            if (!element.dataset.micStopListener) {
+                                element.dataset.micStopListener = 'true';
+                                
+                                element.addEventListener('click', function() {
+                                    console.log('Voice stop button clicked');
+                                    
+                                    // Notify the app that voice chat stopped
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'voiceChatStopped',
+                                        reason: 'stopButton'
+                                    });
+                                    
+                                    // Clean up streams
+                                    window.stopAllAudioTracks();
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            
+            // Run immediately
+            setupVoiceButtonListeners();
+            
+            // Also run when DOM changes to catch dynamically added elements
+            const observer = new MutationObserver(setupVoiceButtonListeners);
+            observer.observe(document.body, { 
+                childList: true, 
+                subtree: true 
+            });
+            
+            // Setup ESC key handler for closing voice chat
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    // Check if any voice chat UI is visible
+                    const voiceUIElements = document.querySelectorAll(
+                        '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                        '.voice-recording, .voice-input-active, .recording-active, ' +
+                        '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                    );
+                    
+                    if (voiceUIElements.length > 0) {
+                        setTimeout(() => {
+                            // Check if UI disappeared after ESC
+                            if (document.querySelectorAll(
+                                '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                                '.voice-recording, .voice-input-active, .recording-active, ' +
+                                '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                            ).length === 0) {
+                                console.log('Voice UI closed with ESC key');
+                                window.webkit.messageHandlers.mediaPermission.postMessage({
+                                    type: 'voiceChatStopped',
+                                    reason: 'escKey'
+                                });
+                                
+                                // Clean up streams
+                                window.stopAllAudioTracks();
+                            }
+                        }, 100);
+                    }
+                }
+            });
+            
+            console.log('Enhanced microphone permission handlers successfully injected');
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (_, error) in
+            if let error = error {
+                print("Error injecting microphone permission handlers: \(error)")
+            } else {
+                print("Successfully injected microphone permission handlers")
+                
+                // Also inject a UI monitor that checks every 500ms
+                self.injectVoiceChatMonitor(webView)
+            }
+        }
+    }
+    
+    // Inject a monitor to check voice chat UI state every 500ms
+    private func injectVoiceChatMonitor(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Check if monitor is already running
+            if (window._voiceChatMonitorActive) return;
+            window._voiceChatMonitorActive = true;
+            
+            console.log('Voice chat monitor started');
+            
+            // Function to check voice chat UI state
+            function checkVoiceChatUI() {
+                // Check for voice UI elements
+                const voiceUIElements = document.querySelectorAll(
+                    '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                    '.voice-recording, .voice-input-active, .recording-active, ' + 
+                    '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                );
+                
+                if (voiceUIElements.length > 0) {
+                    // Voice UI is visible
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'voiceActivityDetected'
+                    });
+                }
+                
+                // Also check for active audio tracks
+                let hasActiveAudio = false;
+                if (window.activeAudioStreams && window.activeAudioStreams.length > 0) {
+                    for (const stream of window.activeAudioStreams) {
+                        if (stream && typeof stream.getTracks === 'function') {
+                            const audioTracks = stream.getTracks().filter(track => 
+                                track.kind === 'audio' && track.readyState === 'live'
+                            );
+                            if (audioTracks.length > 0) {
+                                hasActiveAudio = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (hasActiveAudio) {
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'voiceActivityDetected',
+                        source: 'audioTracks'
+                    });
+                }
+                
+                // Return the result
+                return { hasVoiceUI: voiceUIElements.length > 0, hasActiveAudio };
+            }
+            
+            // Set up interval to check regularly
+            const monitorInterval = setInterval(checkVoiceChatUI, 500);
+            
+            // Clean up when page is unloaded
+            window.addEventListener('beforeunload', function() {
+                clearInterval(monitorInterval);
+                window._voiceChatMonitorActive = false;
+            });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (_, error) in
+            if let error = error {
+                print("Error injecting voice chat monitor: \(error)")
+            } else {
+                print("Successfully injected voice chat monitor")
+            }
+        }
+    }
+    
+    // Function to stop all microphone use
+    func stopAllMicrophoneUse() {
+        print("Stopping all microphone use in AIWebView")
+        
+        // For each webview, execute script to stop all audio streams
+        for (_, webView) in webViews {
+            webView.evaluateJavaScript("""
+            (function() {
+                console.log('Stopping all microphone use in web view');
+                
+                // Use the global function if available
+                if (window.stopAllAudioTracks) {
+                    return window.stopAllAudioTracks();
+                }
+                
+                // Fallback implementation
+                function stopTracks(stream) {
+                    if (stream && typeof stream.getTracks === 'function') {
+                        stream.getTracks().forEach(track => {
+                            if (track.kind === 'audio') {
+                                console.log('Stopping audio track manually');
+                                track.stop();
+                                track.enabled = false;
+                            }
+                        });
+                    }
+                }
+                
+                // Stop all active MediaStreams
+                if (window.activeAudioStreams) {
+                    window.activeAudioStreams.forEach(stream => {
+                        stopTracks(stream);
+                    });
+                    
+                    // Clear the list
+                    window.activeAudioStreams = [];
+                }
+                
+                // Reset voice chat UI elements if present
+                const stopButtons = document.querySelectorAll('button[aria-label="Stop recording"], button[aria-label="Stop"]');
+                stopButtons.forEach(button => button.click());
+                
+                return true;
+            })();
+            """) { (_, error) in
+                if let error = error {
+                    print("Error stopping microphone: \(error)")
+                } else {
+                    print("Successfully stopped microphone in webview")
+                }
+            }
+        }
+        
+        // Reset state
+        isVoiceChatActive = false
+        lastVoiceActivityTime = nil
     }
     
     // Function to explicitly request microphone permission
@@ -112,20 +690,10 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                     // Set voice chat as active
                     setVoiceChatActive(true)
                     
-                    // Start monitoring this webview for voice UI changes
-                    if let webView = message.webView {
-                        injectVoiceChatActivityDetector(webView)
-                    }
-                    
                 case "voiceChatStarted", "voiceInputActive", "recordingStarted":
                     // Voice recording is active
                     print("Voice recording started: \(messageType)")
                     setVoiceChatActive(true)
-                    
-                    // Start monitoring for UI changes
-                    if let webView = message.webView {
-                        injectVoiceChatActivityDetector(webView)
-                    }
                     
                 case "permissionGranted", "streamCreated":
                     print("Microphone permission success: \(messageType)")
@@ -134,8 +702,9 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                     setVoiceChatActive(true)
                     
                     // Monitor this stream to detect when it ends
-                    if let webView = message.webView {
-                        monitorStreamStatus(webView, streamInfo: messageBody)
+                    if let webView = message.webView, 
+                       let streamInfo = messageBody["streamInfo"] as? [String: Any] {
+                        monitorStreamStatus(webView, streamInfo: streamInfo)
                     }
                     
                 case "streamEnded", "voiceChatStopped", "audioStopped", "recordingStopped":
@@ -144,344 +713,16 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                     // When stream ends, voice chat is no longer active
                     setVoiceChatActive(false)
                     
-                    // Reason for stopping (if provided)
-                    let reason = messageBody["reason"] as? String ?? "unknown"
-                    print("Stream ended reason: \(reason)")
-                    
-                    // Perform immediate cleanup for explicit user actions
-                    if reason == "userClosed" || reason == "escKey" || reason == "uiClosed" || reason == "stopButton" {
-                        // For explicit user actions, stop microphone immediately
-                        if let webView = message.webView {
-                            injectAudioStopScript(webView)
-                        } else {
-                            stopAllMicrophoneUse()
-                        }
-                    } else {
-                        // For other reasons, delay cleanup to avoid interrupting quick reconnections
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                            guard let self = self, !self.isVoiceChatActive else { return }
-                            self.stopAllMicrophoneUse()
-                        }
-                    }
-                    
                 case "voiceActivityDetected":
-                    // Voice activity is still ongoing - update the last activity time
-                    lastVoiceActivityTime = Date()
-                    
-                case "uiClosed", "voiceUIClosed":
-                    // Voice UI has closed - stop voice chat after a short delay
-                    print("Voice UI has closed")
-                    
-                    // Set voice chat inactive after a brief delay to catch quick reopening
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                        guard let self = self else { return }
-                        self.setVoiceChatActive(false)
-                        
-                        // Stop microphone use after 1 second if voice chat doesn't resume
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                            guard let self = self, !self.isVoiceChatActive else { return }
-                            self.stopAllMicrophoneUse()
-                        }
+                    // Update the last activity time to prevent premature shutdown
+                    if let webViewCache = WebViewCache.shared as? WebViewCache {
+                        webViewCache.setVoiceChatActive(true)
                     }
                     
                 default:
                     print("Unknown media permission message: \(messageType)")
                 }
             }
-        }
-    }
-    
-    // Function to inject a dedicated voice chat activity detector
-    private func injectVoiceChatActivityDetector(_ webView: WKWebView) {
-        let script = """
-        (function() {
-            // Check if detector is already running
-            if (window._voiceChatActivityDetectorRunning) return;
-            window._voiceChatActivityDetectorRunning = true;
-            
-            console.log('Voice chat activity detector started');
-            
-            // Function to check if voice chat UI is visible
-            function isVoiceChatUIVisible() {
-                // ChatGPT voice chat elements
-                const chatGPTElements = document.querySelectorAll('[aria-label="Stop recording"], [aria-label="Voice input enabled"], .voice-input-active, .recording-button-active, [data-testid="voice-message-recording-indicator"]');
-                
-                // Microsoft Copilot voice elements
-                const copilotElements = document.querySelectorAll('[aria-label="Stop voice input"], .voice-input-container:not(.hidden), [data-testid="voice-input-button"].active');
-                
-                // Claude voice elements
-                const claudeElements = document.querySelectorAll('.voice-recording-active, .recording-indicator-active, [data-recording="true"]');
-                
-                // Generic voice UI elements
-                const genericElements = document.querySelectorAll('.voice-recording, .microphone-active, .recording-active, [data-voice-active="true"], [aria-label*="recording"], [aria-label*="voice"], .voice-button.active');
-                
-                return chatGPTElements.length > 0 || copilotElements.length > 0 || claudeElements.length > 0 || genericElements.length > 0;
-            }
-            
-            // Keep track of previous voice UI state
-            let wasVoiceChatVisible = isVoiceChatUIVisible();
-            let lastActiveTime = Date.now();
-            
-            // Check for voice chat UI changes every 500ms
-            const checkInterval = 500; // ms
-            const activityTimeout = 1000; // If no activity for 1 second, consider voice chat inactive
-            
-            // Register listeners for stop buttons
-            function registerStopButtonListeners() {
-                // Look for stop/close buttons in voice chat UI
-                const stopButtons = document.querySelectorAll(
-                    '[aria-label="Stop recording"], [aria-label="Stop voice input"], .voice-stop-button, .close-voice-button, ' +
-                    'button.voice-close, [data-testid="voice-stop-button"], [aria-label="Stop listening"]'
-                );
-                
-                // Add click listeners to stop buttons if found
-                stopButtons.forEach(button => {
-                    if (!button._hasVoiceStopListener) {
-                        button._hasVoiceStopListener = true;
-                        button.addEventListener('click', () => {
-                            console.log('Voice chat stop button clicked');
-                            
-                            // Notify Swift that voice chat was explicitly stopped
-                            window.webkit.messageHandlers.mediaPermission.postMessage({
-                                type: 'voiceChatStopped',
-                                reason: 'stopButton'
-                            });
-                            
-                            // Force stop any active audio in the page
-                            stopAllAudioTracks();
-                        });
-                    }
-                });
-            }
-            
-            // Helper function to stop all audio tracks
-            function stopAllAudioTracks() {
-                if (window.activeAudioStreams) {
-                    console.log('Stopping all audio tracks from voice chat detector');
-                    window.activeAudioStreams.forEach(stream => {
-                        if (stream && typeof stream.getTracks === 'function') {
-                            stream.getTracks().forEach(track => {
-                                if (track.kind === 'audio') {
-                                    console.log('Stopping audio track');
-                                    track.stop();
-                                    track.enabled = false;
-                                }
-                            });
-                        }
-                    });
-                    
-                    // Clear the active streams array
-                    window.activeAudioStreams = [];
-                }
-            }
-            
-            // Setup periodic check for voice UI changes
-            const voiceUIInterval = setInterval(() => {
-                // Check current state of voice chat UI
-                const isVoiceChatVisible = isVoiceChatUIVisible();
-                
-                // If voice chat is visible
-                if (isVoiceChatVisible) {
-                    // Update last active time
-                    lastActiveTime = Date.now();
-                    
-                    // If voice chat newly appeared
-                    if (!wasVoiceChatVisible) {
-                        console.log('Voice chat UI detected - voice chat active');
-                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                            type: 'voiceChatStarted',
-                            reason: 'uiDetected'
-                        });
-                    } else {
-                        // Send periodic voice activity heartbeat
-                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                            type: 'voiceActivityDetected'
-                        });
-                    }
-                    
-                    // Always register for stop buttons when UI is visible
-                    registerStopButtonListeners();
-                }
-                // If voice chat was visible but now it's not
-                else if (wasVoiceChatVisible) {
-                    console.log('Voice chat UI disappeared');
-                    
-                    // Notify that the UI closed
-                    window.webkit.messageHandlers.mediaPermission.postMessage({
-                        type: 'uiClosed'
-                    });
-                    
-                    // Force stop audio tracks after UI disappears
-                    stopAllAudioTracks();
-                }
-                // If voice chat wasn't visible last check but activity was recent
-                else if (Date.now() - lastActiveTime < activityTimeout) {
-                    // Voice chat activity was recent but UI not visible, check for stop buttons
-                    registerStopButtonListeners();
-                }
-                
-                // Update previous state
-                wasVoiceChatVisible = isVoiceChatVisible;
-            }, checkInterval);
-            
-            // Also monitor ESC key as it's often used to close voice dialog
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && wasVoiceChatVisible) {
-                    console.log('ESC key pressed while voice chat was active');
-                    
-                    // Check after a small delay if voice UI disappeared
-                    setTimeout(() => {
-                        if (!isVoiceChatUIVisible()) {
-                            console.log('Voice chat closed by ESC key');
-                            window.webkit.messageHandlers.mediaPermission.postMessage({
-                                type: 'voiceChatStopped',
-                                reason: 'escKey'
-                            });
-                            
-                            // Stop any audio tracks
-                            stopAllAudioTracks();
-                        }
-                    }, 100);
-                }
-            });
-            
-            // Clean up resources if the window or tab is closed
-            window.addEventListener('beforeunload', () => {
-                clearInterval(voiceUIInterval);
-                window._voiceChatActivityDetectorRunning = false;
-                console.log('Voice chat detector cleaned up');
-                
-                // Stop any audio tracks
-                stopAllAudioTracks();
-            });
-        })();
-        """
-        
-        webView.evaluateJavaScript(script) { (result, error) in
-            if let error = error {
-                print("Error injecting voice chat activity detector: \(error)")
-            } else {
-                print("Successfully injected voice chat activity detector")
-            }
-        }
-    }
-    
-    // Monitor stream status to detect when it ends
-    private func monitorStreamStatus(_ webView: WKWebView, streamInfo: [String: Any]) {
-        // Add a script to monitor the status of this stream and all tracks
-        let script = """
-        (function() {
-            // Helper function to add track monitoring
-            function addTrackMonitoring(stream) {
-                // Check if this stream has audio tracks
-                const audioTracks = stream.getAudioTracks ? stream.getAudioTracks() : [];
-                
-                if (audioTracks.length > 0) {
-                    console.log('Monitoring', audioTracks.length, 'audio tracks for end events');
-                    
-                    // Add listeners to all tracks
-                    audioTracks.forEach(track => {
-                        // Add ended event listener if not already added
-                        if (!track._endedListenerAdded) {
-                            track._endedListenerAdded = true;
-                            
-                            track.addEventListener('ended', function() {
-                                console.log('Audio track ended');
-                                window.webkit.messageHandlers.mediaPermission.postMessage({
-                                    type: 'streamEnded',
-                                    reason: 'trackEnded'
-                                });
-                            });
-                            
-                            // Also monitor muted state
-                            track.addEventListener('mute', function() {
-                                console.log('Audio track muted');
-                                window.webkit.messageHandlers.mediaPermission.postMessage({
-                                    type: 'trackMuted'
-                                });
-                            });
-                            
-                            // Monitor for enabled/disabled state
-                            const originalEnabled = track.enabled;
-                            Object.defineProperty(track, 'enabled', {
-                                get: function() { return originalEnabled; },
-                                set: function(value) {
-                                    if (!value && originalEnabled) {
-                                        console.log('Audio track disabled');
-                                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                                            type: 'trackDisabled'
-                                        });
-                                    }
-                                    originalEnabled = value;
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                // Add listener for stream's inactive event
-                if (!stream._inactiveListenerAdded) {
-                    stream._inactiveListenerAdded = true;
-                    
-                    stream.addEventListener('inactive', function() {
-                        console.log('Stream became inactive');
-                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                            type: 'streamEnded',
-                            reason: 'inactive'
-                        });
-                    });
-                    
-                    // Also add monitor for removeTrack
-                    stream.addEventListener('removetrack', function(e) {
-                        console.log('Track removed from stream:', e.track.kind);
-                        if (e.track.kind === 'audio') {
-                            window.webkit.messageHandlers.mediaPermission.postMessage({
-                                type: 'trackRemoved'
-                            });
-                        }
-                    });
-                }
-            }
-            
-            // Find all active streams to monitor
-            if (window.activeAudioStreams && window.activeAudioStreams.length > 0) {
-                // Add monitoring to all active streams
-                window.activeAudioStreams.forEach(stream => {
-                    if (stream) {
-                        addTrackMonitoring(stream);
-                    }
-                });
-                
-                // Success - at least one stream was found
-                return true;
-            } else {
-                // No active streams found to monitor
-                console.log('No active streams found to monitor');
-                return false;
-            }
-        })();
-        """
-        
-        webView.evaluateJavaScript(script) { (result, error) in
-            if let error = error {
-                print("Error monitoring audio stream: \(error)")
-            } else if let success = result as? Bool, success {
-                print("Successfully added stream monitoring")
-            } else {
-                print("No streams found to monitor")
-            }
-        }
-    }
-    
-    deinit {
-        // Clean up all timers
-        for timer in chatGPTTimers.values {
-            timer.invalidate()
-        }
-        
-        // Clean up all keyboard shortcut timers
-        for timer in keyboardShortcutTimers.values {
-            timer.invalidate()
         }
     }
     
@@ -538,30 +779,30 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                 // Instead, set up a handler that will properly request it when needed
                 if (typeof navigator.mediaDevices !== 'undefined') {
                     // Log all permission requests
-                const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
-                navigator.mediaDevices.getUserMedia = async function(constraints) {
-                    console.log('getUserMedia called with:', constraints);
-                    
-                    window.webkit.messageHandlers.mediaPermission.postMessage({
-                        type: 'getUserMediaCalled',
-                        constraints: JSON.stringify(constraints)
-                    });
-                    
-                    try {
-                        const stream = await originalGetUserMedia.call(this, constraints);
+                    const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+                    navigator.mediaDevices.getUserMedia = async function(constraints) {
+                        console.log('getUserMedia called with:', constraints);
+                        
                         window.webkit.messageHandlers.mediaPermission.postMessage({
-                            type: 'streamCreated',
-                            trackCount: stream.getTracks().length
+                            type: 'getUserMediaCalled',
+                            constraints: JSON.stringify(constraints)
                         });
-                        return stream;
-                    } catch (err) {
-                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                            type: 'streamError',
-                            error: err.toString()
-                        });
-                        throw err;
-                    }
-                };
+                        
+                        try {
+                            const stream = await originalGetUserMedia.call(this, constraints);
+                            window.webkit.messageHandlers.mediaPermission.postMessage({
+                                type: 'streamCreated',
+                                trackCount: stream.getTracks().length
+                            });
+                            return stream;
+                        } catch (err) {
+                            window.webkit.messageHandlers.mediaPermission.postMessage({
+                                type: 'streamError',
+                                error: err.toString()
+                            });
+                            throw err;
+                        }
+                    };
                 }
             })();
             """
@@ -1436,17 +1677,31 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                                 type: 'streamEnded',
                                 reason: 'inactive'
                             });
+                            
+                            // Remove this stream from active streams
+                            const index = window.activeAudioStreams.indexOf(stream);
+                            if (index !== -1) {
+                                window.activeAudioStreams.splice(index, 1);
+                            }
                         });
                         
                         // Also add listeners to all tracks
                         stream.getTracks().forEach(track => {
-                            track.addEventListener('ended', function() {
-                                console.log('Audio track ended');
-                                window.webkit.messageHandlers.mediaPermission.postMessage({
-                                    type: 'streamEnded',
-                                    reason: 'trackEnded'
+                            if (track.kind === 'audio') {
+                                track.addEventListener('ended', function() {
+                                    console.log('Audio track ended');
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'streamEnded',
+                                        reason: 'trackEnded'
+                                    });
+                                    
+                                    // Cleanup stream references after a track ends
+                                    const index = window.activeAudioStreams.indexOf(stream);
+                                    if (index !== -1) {
+                                        window.activeAudioStreams.splice(index, 1);
+                                    }
                                 });
-                            });
+                            }
                         });
                         
                         // Update our state on success
@@ -1454,6 +1709,11 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                         window.webkit.messageHandlers.mediaPermission.postMessage({
                             type: 'permissionGranted',
                             source: 'getUserMedia'
+                        });
+                        
+                        // Notify about voice chat activity
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'voiceChatStarted'
                         });
                         
                         return stream;
@@ -1477,6 +1737,39 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                 
                 // For other requests, use the original implementation
                 return await originalGetUserMedia.call(this, constraints);
+            };
+            
+            // Add function to stop all audio tracks
+            window.stopAllAudioTracks = function() {
+                console.log('Stopping all audio tracks');
+                
+                if (window.activeAudioStreams) {
+                    window.activeAudioStreams.forEach(stream => {
+                        if (stream && typeof stream.getTracks === 'function') {
+                            stream.getTracks().forEach(track => {
+                                if (track.kind === 'audio') {
+                                    track.stop();
+                                    console.log('Stopped audio track');
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Clear the list
+                    window.activeAudioStreams = [];
+                }
+                
+                // Close any audio contexts
+                if (window.activeAudioContext) {
+                    try {
+                        window.activeAudioContext.close();
+                        window.activeAudioContext = null;
+                    } catch (e) {
+                        console.error('Error closing audio context:', e);
+                    }
+                }
+                
+                return true;
             };
             
             // Also hook into any voice recognition buttons or elements
@@ -1522,92 +1815,46 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                                 element.addEventListener('click', function(e) {
                                     console.log('Voice input element clicked');
                                     
-                                    // Only request if not throttled
-                                    const now = Date.now();
-                                    const lastRequest = window._microphonePermissionState.lastRequestTime;
-                                    
-                                    if (!lastRequest || (now - lastRequest) > 5000) {
-                                        console.log('Requesting microphone permissions from button click');
-                                        window._microphonePermissionState.lastRequestTime = now;
-                                        
-                                        // Notify native app of button click
-                                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                                            type: 'voiceButtonClicked',
-                                            selector: selector
-                                        });
-                                        
-                                        // Only request permission if not already denied
-                                        if (window._microphonePermissionState.status !== 'denied') {
-                                            navigator.mediaDevices.getUserMedia({ audio: true })
-                                                .then(stream => {
-                                                    console.log('Microphone access granted from button click');
-                                                    // Store the stream for tracking
-                                                    window.activeAudioStreams.push(stream);
-                                                })
-                                                .catch(err => console.error('Microphone access error from button click:', err));
-                                        }
-                                    }
-                                });
-                                
-                                // Also try to find a stop button
-                                let stopButton = null;
-                                
-                                // Look for stop button near this button (sibling, parent or child)
-                                const stopSelectors = [
-                                    'button[aria-label*="stop"]',
-                                    'button[title*="stop"]',
-                                    'button[aria-label*="cancel"]',
-                                    'button[title*="cancel"]',
-                                    'button.cancel',
-                                    'button.stop'
-                                ];
-                                
-                                // Look for a stop button in various places
-                                for (const stopSelector of stopSelectors) {
-                                    // Check siblings
-                                    if (element.parentNode) {
-                                        const siblings = element.parentNode.querySelectorAll(stopSelector);
-                                        if (siblings.length > 0) {
-                                            stopButton = siblings[0];
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // Check parent container
-                                    const parentContainer = element.closest('.voice-container, .microphone-container');
-                                    if (parentContainer) {
-                                        const parentStops = parentContainer.querySelectorAll(stopSelector);
-                                        if (parentStops.length > 0) {
-                                            stopButton = parentStops[0];
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                // If we found a stop button, add a listener
-                                if (stopButton && !stopButton.dataset.micStopListener) {
-                                    stopButton.dataset.micStopListener = 'true';
-                                    
-                                    stopButton.addEventListener('click', function() {
-                                        console.log('Voice stop button clicked');
-                                        
-                                        // Notify the app that voice chat stopped
-                                        window.webkit.messageHandlers.mediaPermission.postMessage({
-                                            type: 'voiceChatStopped',
-                                            reason: 'stopButton'
-                                        });
-                                        
-                                        // Clean up any active streams
-                                        if (window.activeAudioStreams) {
-                                            window.activeAudioStreams.forEach(stream => {
-                                                stream.getTracks().forEach(track => {
-                                                    track.stop();
-                                                });
-                                            });
-                                            window.activeAudioStreams = [];
-                                        }
+                                    // Notify native app of button click
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'voiceButtonClicked',
+                                        selector: selector
                                     });
-                                }
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                // Also look for stop buttons
+                const stopSelectors = [
+                    'button[aria-label*="stop"]',
+                    'button[title*="stop"]',
+                    'button[aria-label*="cancel"]',
+                    'button[title*="cancel"]',
+                    'button.cancel',
+                    'button.stop'
+                ];
+                
+                for (const selector of stopSelectors) {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length > 0) {
+                        elements.forEach(element => {
+                            if (!element.dataset.micStopListener) {
+                                element.dataset.micStopListener = 'true';
+                                
+                                element.addEventListener('click', function() {
+                                    console.log('Voice stop button clicked');
+                                    
+                                    // Notify the app that voice chat stopped
+                                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                                        type: 'voiceChatStopped',
+                                        reason: 'stopButton'
+                                    });
+                                    
+                                    // Clean up streams
+                                    window.stopAllAudioTracks();
+                                });
                             }
                         });
                     }
@@ -1624,6 +1871,38 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                 subtree: true 
             });
             
+            // Setup ESC key handler for closing voice chat
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    // Check if any voice chat UI is visible
+                    const voiceUIElements = document.querySelectorAll(
+                        '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                        '.voice-recording, .voice-input-active, .recording-active, ' +
+                        '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                    );
+                    
+                    if (voiceUIElements.length > 0) {
+                        setTimeout(() => {
+                            // Check if UI disappeared after ESC
+                            if (document.querySelectorAll(
+                                '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                                '.voice-recording, .voice-input-active, .recording-active, ' +
+                                '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                            ).length === 0) {
+                                console.log('Voice UI closed with ESC key');
+                                window.webkit.messageHandlers.mediaPermission.postMessage({
+                                    type: 'voiceChatStopped',
+                                    reason: 'escKey'
+                                });
+                                
+                                // Clean up streams
+                                window.stopAllAudioTracks();
+                            }
+                        }, 100);
+                    }
+                }
+            });
+            
             console.log('Enhanced microphone permission handlers successfully injected');
         })();
         """
@@ -1633,6 +1912,82 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
                 print("Error injecting microphone permission handlers: \(error)")
             } else {
                 print("Successfully injected microphone permission handlers")
+                
+                // Also inject a UI monitor that checks every 500ms
+                self.injectVoiceChatMonitor(webView)
+            }
+        }
+    }
+    
+    // Inject a monitor to check voice chat UI state every 500ms
+    private func injectVoiceChatMonitor(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Check if monitor is already running
+            if (window._voiceChatMonitorActive) return;
+            window._voiceChatMonitorActive = true;
+            
+            console.log('Voice chat monitor started');
+            
+            // Function to check voice chat UI state
+            function checkVoiceChatUI() {
+                // Check for voice UI elements
+                const voiceUIElements = document.querySelectorAll(
+                    '[aria-label="Stop recording"], [aria-label="Stop voice input"], ' +
+                    '.voice-recording, .voice-input-active, .recording-active, ' + 
+                    '[data-voice-active="true"], [data-testid="voice-message-recording-indicator"]'
+                );
+                
+                if (voiceUIElements.length > 0) {
+                    // Voice UI is visible
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'voiceActivityDetected'
+                    });
+                }
+                
+                // Also check for active audio tracks
+                let hasActiveAudio = false;
+                if (window.activeAudioStreams && window.activeAudioStreams.length > 0) {
+                    for (const stream of window.activeAudioStreams) {
+                        if (stream && typeof stream.getTracks === 'function') {
+                            const audioTracks = stream.getTracks().filter(track => 
+                                track.kind === 'audio' && track.readyState === 'live'
+                            );
+                            if (audioTracks.length > 0) {
+                                hasActiveAudio = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (hasActiveAudio) {
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'voiceActivityDetected',
+                        source: 'audioTracks'
+                    });
+                }
+                
+                // Return the result
+                return { hasVoiceUI: voiceUIElements.length > 0, hasActiveAudio };
+            }
+            
+            // Set up interval to check regularly
+            const monitorInterval = setInterval(checkVoiceChatUI, 500);
+            
+            // Clean up when page is unloaded
+            window.addEventListener('beforeunload', function() {
+                clearInterval(monitorInterval);
+                window._voiceChatMonitorActive = false;
+            });
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (_, error) in
+            if let error = error {
+                print("Error injecting voice chat monitor: \(error)")
+            } else {
+                print("Successfully injected voice chat monitor")
             }
         }
     }
@@ -1711,41 +2066,88 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
         }
     }
     
-    // Function to stop all microphone use
-    func stopAllMicrophoneUse() {
-        // For each webview, execute script to stop all audio streams
-        for (_, webView) in webViews {
-            webView.evaluateJavaScript("""
-            (function() {
-                // Stop all audio tracks in MediaStream objects
-                if (navigator.mediaDevices && navigator.mediaDevices._getUserMedia) {
-                    navigator.mediaDevices._getUserMedia = navigator.mediaDevices.getUserMedia;
-                }
+    // Monitor stream status to detect when it ends
+    private func monitorStreamStatus(_ webView: WKWebView, streamInfo: [String: Any]) {
+        // Add a script to monitor the status of this stream
+        let script = """
+        (function() {
+            // Find the stream in our active streams
+            const activeStream = window.activeAudioStreams && window.activeAudioStreams.length > 0 ? 
+                window.activeAudioStreams[window.activeAudioStreams.length - 1] : null;
+            
+            if (activeStream) {
+                console.log('Monitoring stream for end events');
                 
-                // Stop all active MediaStreams
-                if (window.activeMicrophones) {
-                    window.activeMicrophones.forEach(stream => {
-                        if (stream && typeof stream.getTracks === 'function') {
-                            stream.getTracks().forEach(track => {
-                                if (track.kind === 'audio') {
-                                    track.stop();
-                                    console.log('Stopped audio track');
-                                }
-                            });
-                        }
+                // Add listener for when stream becomes inactive
+                activeStream.addEventListener('inactive', function() {
+                    console.log('Stream became inactive');
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'streamEnded',
+                        reason: 'inactive'
+                    });
+                });
+                
+                // Add listeners to all tracks
+                activeStream.getTracks().forEach(track => {
+                    track.addEventListener('ended', function() {
+                        console.log('Track ended');
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'streamEnded',
+                            reason: 'trackEnded',
+                            trackKind: track.kind
+                        });
                     });
                     
-                    // Clear the list
-                    window.activeMicrophones = [];
-                }
+                    // Also monitor muted state
+                    track.addEventListener('mute', function() {
+                        console.log('Track muted');
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'trackMuted',
+                            trackKind: track.kind
+                        });
+                    });
+                });
                 
-                // Reset voice chat UI elements if present
-                const stopButtons = document.querySelectorAll('button[aria-label="Stop recording"], button[aria-label="Stop"]');
-                stopButtons.forEach(button => button.click());
+                // Also set up a monitor for ChatGPT's voice UI
+                const monitorChatGPTVoiceUI = function() {
+                    // Check for recording indicator
+                    const recordingIndicator = document.querySelector('[data-testid="voice-message-recording-indicator"]');
+                    if (!recordingIndicator) {
+                        // If indicator is gone, voice chat might have stopped
+                        console.log('ChatGPT recording indicator not found, voice chat may have stopped');
+                        window.webkit.messageHandlers.mediaPermission.postMessage({
+                            type: 'voiceChatStopped',
+                            reason: 'uiChanged'
+                        });
+                        return;
+                    }
+                    
+                    // Voice is still active, send heartbeat
+                    window.webkit.messageHandlers.mediaPermission.postMessage({
+                        type: 'voiceActivityDetected'
+                    });
+                };
+                
+                // Check every second for ChatGPT voice UI changes
+                const monitorInterval = setInterval(monitorChatGPTVoiceUI, 1000);
+                
+                // Clean up interval after 60 seconds
+                setTimeout(() => {
+                    clearInterval(monitorInterval);
+                }, 60000);
                 
                 return true;
-            })();
-            """) { _, _ in }
+            } else {
+                console.log('No active stream found to monitor');
+                return false;
+            }
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Error monitoring stream: \(error)")
+            }
         }
     }
     
@@ -2044,53 +2446,8 @@ class KeyboardResponderView: NSView {
         }
     }
     
-    // Helper method to check if currently in Copilot voice chat
-    private func isInCopilotVoiceChat() -> Bool {
-        guard let webView = webView else { return false }
-        
-        // First check if this is Copilot webview
-        let isCopilot = webView.url?.host?.contains("copilot.microsoft.com") ?? false
-        guard isCopilot else { return false }
-        
-        // Check if voice chat is active by using JavaScript
-        let voiceChatScript = """
-        (function() {
-            return document.querySelectorAll(
-                '[aria-label="Stop voice input"], ' +
-                '.voice-input-container:not(.hidden), ' +
-                '[data-testid="voice-input-button"].active, ' +
-                '.voice-input-active, ' +
-                '.sydney-voice-input'
-            ).length > 0;
-        })();
-        """
-        
-        var isVoiceChat = false
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        webView.evaluateJavaScript(voiceChatScript) { (result, error) in
-            if let isActive = result as? Bool {
-                isVoiceChat = isActive
-            }
-            semaphore.signal()
-        }
-        
-        // Wait with a short timeout
-        _ = semaphore.wait(timeout: .now() + 0.1)
-        
-        return isVoiceChat
-    }
-    
     // Handle all key down events and prevent unexpected app quitting
     override func keyDown(with event: NSEvent) {
-        // For Copilot voice chat, always let the webview handle the keypress
-        if isInCopilotVoiceChat() {
-            if let webView = webView {
-                webView.keyDown(with: event)
-                return
-            }
-        }
-        
         // Allow only specific command key combinations to pass through
         if event.modifierFlags.contains(.command) {
             // Handle Command+E (toggle window) at the application level
@@ -2133,13 +2490,6 @@ class KeyboardResponderView: NSView {
     
     // Handle key equivalents (keyboard shortcuts)
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        // For Copilot voice chat, always let the webview handle the keypress
-        if isInCopilotVoiceChat() {
-            if let webView = webView {
-                return webView.performKeyEquivalent(with: event)
-            }
-        }
-        
         // Always allow Command+E (toggle window) - handled at app level
         if event.modifierFlags.contains(.command) && event.keyCode == 0x0E {
             return super.performKeyEquivalent(with: event)

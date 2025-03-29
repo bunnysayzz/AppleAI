@@ -6,13 +6,14 @@ import SwiftUI
 // Import ServiceManagement for login item management
 @_exported import ServiceManagement
 
-class MenuBarManager: NSObject, NSMenuDelegate {
+class MenuBarManager: NSObject, NSMenuDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem!
     private var popupWindow: NSWindow?
     private var shortcutManager: KeyboardShortcutManager!
     private var eventMonitor: Any?
     private var statusMenu: NSMenu!
     private var preferencesWindow: NSWindow?
+    private var localEventMonitor: Any?
     
     func setup() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -74,6 +75,14 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     }
     
     deinit {
+        // Clean up event monitor
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        
+        // Remove any observers
+        NotificationCenter.default.removeObserver(self)
+        
         if let eventMonitor = eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
         }
@@ -323,30 +332,19 @@ class MenuBarManager: NSObject, NSMenuDelegate {
     
     // Add a key event monitor to prevent problematic keys from causing the app to quit
     private func setupWindowKeyEventMonitoring(_ window: NSWindow) {
-        // Set up a key down monitor for the window
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // If event is not for our window, pass it through
-            if event.window != window {
+        // Add a local monitor for key events to prevent app quitting
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self, let window = self.popupWindow, event.window == window else {
                 return event
             }
             
-            // Allow Command+E (toggle window)
-            if event.modifierFlags.contains(.command) && event.keyCode == 0x0E {
+            // Check for Copilot voice chat activity
+            if self.isInCopilotVoiceChat(window) {
+                // When in Copilot voice chat, let all keypresses through to the window
                 return event
             }
             
-            // Allow standard keyboard shortcuts (copy, paste, select all)
-            let allowedCmdShortcuts: [UInt16] = [
-                0x00, // A - Select All
-                0x08, // C - Copy
-                0x09  // V - Paste
-            ]
-            
-            if event.modifierFlags.contains(.command) && allowedCmdShortcuts.contains(event.keyCode) {
-                return event
-            }
-            
-            // Get the first responder
+            // Check if we have a first responder
             guard let firstResponder = window.firstResponder else {
                 // If no first responder, toggle the window off instead of letting the event propagate
                 self.closePopupWindow()
@@ -370,6 +368,69 @@ class MenuBarManager: NSObject, NSMenuDelegate {
                 return nil // Consume the event
             }
         }
+    }
+    
+    // Helper method to check if Copilot voice chat is active
+    private func isInCopilotVoiceChat(_ window: NSWindow) -> Bool {
+        // Find Copilot webView in the window
+        var foundWebView: WKWebView? = nil
+        
+        // Function to recursively search for WKWebView
+        func findWKWebView(in view: NSView) -> WKWebView? {
+            // Check if this view is a WKWebView
+            if let webView = view as? WKWebView {
+                return webView
+            }
+            
+            // Search in subviews
+            for subview in view.subviews {
+                if let webView = findWKWebView(in: subview) {
+                    return webView
+                }
+            }
+            
+            return nil
+        }
+        
+        // Find WKWebView in the window's content view
+        if let contentView = window.contentView {
+            foundWebView = findWKWebView(in: contentView)
+        }
+        
+        // Check if it's a Copilot webview and if voice chat is active
+        if let webView = foundWebView,
+           let url = webView.url,
+           url.host?.contains("copilot.microsoft.com") == true {
+            // Check for voice chat UI elements
+            let voiceChatScript = """
+            (function() {
+                return document.querySelectorAll(
+                    '[aria-label="Stop voice input"], ' +
+                    '.voice-input-container:not(.hidden), ' +
+                    '[data-testid="voice-input-button"].active, ' +
+                    '.voice-input-active, ' +
+                    '.sydney-voice-input'
+                ).length > 0;
+            })();
+            """
+            
+            var isVoiceChat = false
+            let semaphore = DispatchSemaphore(value: 0)
+            
+            webView.evaluateJavaScript(voiceChatScript) { (result, error) in
+                if let isActive = result as? Bool {
+                    isVoiceChat = isActive
+                }
+                semaphore.signal()
+            }
+            
+            // Wait with a short timeout
+            _ = semaphore.wait(timeout: .now() + 0.05)
+            
+            return isVoiceChat
+        }
+        
+        return false
     }
     
     private func openPopupWindowWithService(_ service: AIService) {
@@ -581,11 +642,10 @@ class MenuBarManager: NSObject, NSMenuDelegate {
         // Add the accessory view controller to the window
         window.addTitlebarAccessoryViewController(accessoryViewController)
     }
-}
-
-// Add NSWindowDelegate extension to MenuBarManager
-extension MenuBarManager: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
+    
+    // MARK: - NSWindowDelegate
+    
+    @objc func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         
         // Check if this is the preferences window
@@ -604,7 +664,7 @@ extension MenuBarManager: NSWindowDelegate {
     }
     
     // Return false to prevent normal window closing behavior for preferences
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
+    @objc func windowShouldClose(_ sender: NSWindow) -> Bool {
         // Handle each window type differently
         if sender == popupWindow {
             // For the main popup window, just hide it
@@ -630,7 +690,7 @@ extension MenuBarManager: NSWindowDelegate {
     }
     
     // Prevent window zoom (maximize)
-    func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> Bool {
+    @objc func windowShouldZoom(_ window: NSWindow, toFrame newFrame: NSRect) -> Bool {
         // Always prevent zoom for our popup window
         if window == popupWindow {
             return false
