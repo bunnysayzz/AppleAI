@@ -3,8 +3,6 @@ import Carbon.HIToolbox
 
 class KeyboardShortcutManager {
     private var menuBarManager: MenuBarManager
-    private var localEventMonitor: Any?
-    private var globalEventMonitor: Any?
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyID = EventHotKeyID()
     private let preferences = PreferencesManager.shared
@@ -21,61 +19,13 @@ class KeyboardShortcutManager {
     
     deinit {
         unregisterGlobalHotKey()
-        
-        if let localEventMonitor = localEventMonitor {
-            NSEvent.removeMonitor(localEventMonitor)
-        }
-        
-        if let globalEventMonitor = globalEventMonitor {
-            NSEvent.removeMonitor(globalEventMonitor)
-        }
     }
     
     private func setupShortcuts() {
         // Register the global Command+E hotkey using Carbon API
         registerGlobalHotKey()
         
-        // Set up local event monitoring for Command+Option+Number shortcuts (service shortcuts)
-        setupServiceShortcuts()
-    }
-    
-    private func setupServiceShortcuts() {
-        // Monitor for local keyboard events for service switching
-        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if self?.handleServiceHotKeys(event) == true {
-                return nil // Consume the event
-            }
-            return event // Pass the event along
-        }
-        
-        // Also add global monitor for when app is not in focus
-        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            _ = self?.handleServiceHotKeys(event)
-        }
-    }
-    
-    private func handleServiceHotKeys(_ event: NSEvent) -> Bool {
-        // Check for Command+Option+number shortcuts for service switching
-        if event.modifierFlags.contains([.command, .option]) {
-            // Get the number key pressed (1-9 for different AI services)
-            if let number = getNumberFromKeyCode(event.keyCode), number >= 1 && number <= 9 {
-                // Get the corresponding service (if available)
-                let index = number - 1
-                if index < aiServices.count {
-                    let service = aiServices[index]
-                    
-                    // Post a notification to open this service
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("OpenAIService"),
-                        object: nil,
-                        userInfo: ["service": service]
-                    )
-                    return true // Indicate the event was handled
-                }
-            }
-        }
-        
-        return false
+        // All other shortcuts have been removed
     }
     
     private func hotKeyHandler(eventHandlerCallRef: EventHandlerCallRef?, event: EventRef?, userData: UnsafeMutableRawPointer?) -> OSStatus {
@@ -178,23 +128,6 @@ class KeyboardShortcutManager {
         if let hotKeyRef = hotKeyRef {
             UnregisterEventHotKey(hotKeyRef)
             self.hotKeyRef = nil
-        }
-    }
-    
-    private func getNumberFromKeyCode(_ keyCode: UInt16) -> Int? {
-        // Map key codes to numbers
-        switch keyCode {
-        case UInt16(kVK_ANSI_1), UInt16(kVK_ANSI_Keypad1): return 1
-        case UInt16(kVK_ANSI_2), UInt16(kVK_ANSI_Keypad2): return 2
-        case UInt16(kVK_ANSI_3), UInt16(kVK_ANSI_Keypad3): return 3
-        case UInt16(kVK_ANSI_4), UInt16(kVK_ANSI_Keypad4): return 4
-        case UInt16(kVK_ANSI_5), UInt16(kVK_ANSI_Keypad5): return 5
-        case UInt16(kVK_ANSI_6), UInt16(kVK_ANSI_Keypad6): return 6
-        case UInt16(kVK_ANSI_7), UInt16(kVK_ANSI_Keypad7): return 7
-        case UInt16(kVK_ANSI_8), UInt16(kVK_ANSI_Keypad8): return 8
-        case UInt16(kVK_ANSI_9), UInt16(kVK_ANSI_Keypad9): return 9
-        case UInt16(kVK_ANSI_0), UInt16(kVK_ANSI_Keypad0): return 10  // For 10th service if needed
-        default: return nil
         }
     }
     

@@ -217,35 +217,151 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func setupKeyboardEvents() {
-        // Monitor keyboard events for text input fields
+        // SUPER-STRICT MODE: Block ALL key events unless explicitly allowed
+        // This prevents any key from quitting the app unexpectedly
+        
+        // First monitor: Aggressively block ALL keyboard events by default
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // Allow standard keyboard shortcuts (copy, paste, select all) 
-            // for text fields in any window
-            let standardShortcuts: [UInt16] = [
-                UInt16(0x00), // A - Select All
-                UInt16(0x08), // C - Copy
-                UInt16(0x09), // V - Paste
-                UInt16(0x07), // X - Cut
-                UInt16(0x0C), // Z - Undo
-                UInt16(0x0D)  // Y - Redo
-            ]
+            print("Key event detected: \(event.keyCode) - \(event.charactersIgnoringModifiers ?? "")")
             
-            if event.modifierFlags.contains(.command) && standardShortcuts.contains(event.keyCode) {
-                // Make sure we're in a text input before passing these through
-                if let window = event.window, 
-                   let firstResponder = window.firstResponder {
-                    let responderClass = NSStringFromClass(type(of: firstResponder))
+            // 1. ALWAYS allow Command+E toggle shortcut regardless of context
+            if event.modifierFlags.contains(.command) && 
+               event.keyCode == 0x0E && 
+               event.charactersIgnoringModifiers == "e" {
+                return event // Always allow Command+E to toggle
+            }
+            
+            // 2. Check if we're in a text field/input context
+            if let window = event.window, window.isKeyWindow,
+               let firstResponder = window.firstResponder {
+                
+                let responderClass = NSStringFromClass(type(of: firstResponder))
+                
+                // Check if we're in a text input field or text editor
+                let isTextInputField = responderClass.contains("NSText") || 
+                                     responderClass.contains("WKWebView") || 
+                                     responderClass.contains("NSTextField") ||
+                                     responderClass.contains("KeyboardResponderView") ||
+                                     responderClass.contains("NSTextInputContext") ||
+                                     responderClass.contains("NSTextView")
+                
+                // Allow key events in text input fields
+                if isTextInputField {
+                    // In text field, only allow standard text editing shortcuts and normal typing
+                    if event.modifierFlags.contains(.command) {
+                        // Allow only specific standard text editing shortcuts
+                        let standardShortcuts: [UInt16] = [
+                            UInt16(0x00), // A - Select All
+                            UInt16(0x08), // C - Copy
+                            UInt16(0x09), // V - Paste
+                            UInt16(0x07), // X - Cut
+                            UInt16(0x0C), // Z - Undo
+                            UInt16(0x0D)  // Y - Redo
+                        ]
+                        
+                        if standardShortcuts.contains(event.keyCode) {
+                            return event // Allow standard text editing shortcuts
+                        }
+                        
+                        // SUPER-STRICT: Specifically block Command+Q and Command+W
+                        if event.keyCode == 0x0C || event.keyCode == 0x0D {
+                            print("Blocked Command+Q/W in text field")
+                            return nil
+                        }
+                        
+                        // Block all other command shortcuts when in text field
+                        print("Blocked command shortcut in text field: \(event.keyCode)")
+                        return nil
+                    }
                     
-                    // Check if the first responder is a text field type or webview
-                    if responderClass.contains("NSText") || 
-                       responderClass.contains("WKWebView") || 
-                       responderClass.contains("KeyboardResponderView") {
-                        return event // Pass through to the appropriate responder
+                    // Allow regular typing in text fields
+                    return event
+                }
+                
+                // For menu items, we allow Command+Q to work properly
+                if responderClass.contains("NSMenu") || responderClass.contains("MenuItem") {
+                    // Special case: Only allow Command+Q if it's from menu
+                    if event.modifierFlags.contains(.command) && 
+                       event.keyCode == 0x0C && 
+                       event.charactersIgnoringModifiers == "q" {
+                        // This is Command+Q from the menu, allow it
+                        return event
+                    }
+                    
+                    // Allow other menu interactions
+                    return event
+                }
+                
+                // ULTRA-STRICT: Block absolutely ALL other key events when not in a text field
+                // This is the key change to prevent random keys from quitting during the focus delay
+                print("ULTRA-STRICT: Blocking ALL key event outside text field: \(event.keyCode)")
+                return nil
+            }
+            
+            // Block ALL key events by default if we can't determine context
+            // This is safer than potentially allowing a quit command
+            print("Default blocking unknown context key event: \(event.keyCode)")
+            return nil
+        }
+        
+        // Add a second fail-safe monitor to catch any events that might slip through
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Last line of defense - specifically block ANY Command+Q/W that gets through
+            if event.modifierFlags.contains(.command) {
+                if event.keyCode == 0x0C && event.charactersIgnoringModifiers == "q" {
+                    // Double-check if this is from menu
+                    if let firstResponder = NSApp.keyWindow?.firstResponder,
+                       !NSStringFromClass(type(of: firstResponder)).contains("NSMenu") {
+                        print("FAIL-SAFE: Blocked Command+Q")
+                        return nil
+                    }
+                }
+                
+                if event.keyCode == 0x0D && event.charactersIgnoringModifiers == "w" {
+                    // Double-check if this is from menu
+                    if let firstResponder = NSApp.keyWindow?.firstResponder,
+                       !NSStringFromClass(type(of: firstResponder)).contains("NSMenu") {
+                        print("FAIL-SAFE: Blocked Command+W")
+                        return nil
                     }
                 }
             }
             
-            // Return the event unmodified for other cases
+            // Let other events pass through to the next handler
+            return event
+        }
+        
+        // Add a third safety layer that catches ALL key up events to be extra safe
+        NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
+            // For key up events, use the same strict logic to be consistent
+            if let window = event.window, window.isKeyWindow,
+               let firstResponder = window.firstResponder {
+                
+                let responderClass = NSStringFromClass(type(of: firstResponder))
+                
+                // Only allow key up events in text fields or menu items
+                let isAllowedContext = responderClass.contains("NSText") || 
+                                    responderClass.contains("WKWebView") || 
+                                    responderClass.contains("NSTextField") ||
+                                    responderClass.contains("KeyboardResponderView") ||
+                                    responderClass.contains("NSMenu") ||
+                                    responderClass.contains("MenuItem")
+                
+                if isAllowedContext {
+                    return event
+                }
+                
+                // Block all other key up events
+                return nil
+            }
+            
+            // Block by default
+            return nil
+        }
+        
+        // Also monitor flag changed events (modifier keys) for consistency
+        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
+            // Allow all modifier key changes as they don't typically trigger app quit
             return event
         }
     }
@@ -282,7 +398,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let fileMenuItem = NSMenuItem(title: "File", action: nil, keyEquivalent: "")
         fileMenuItem.submenu = fileMenu
         
-        // Add open AI interface item with Command+E shortcut
+        // Add open AI interface item with Command+E shortcut - keep this as the only custom shortcut
         let openItem = NSMenuItem(title: "Open AI Interface", action: #selector(menuBarManager.togglePopupWindow), keyEquivalent: "e")
         openItem.target = menuBarManager
         fileMenu.addItem(openItem)

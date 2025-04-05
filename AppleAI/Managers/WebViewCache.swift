@@ -105,9 +105,6 @@ class WebViewCache: ObservableObject {
                 // For Copilot, inject an extra aggressive audio cleanup script that runs periodically
                 if isCopilot {
                     self.injectCopilotAudioCleanupScript(webView)
-                    
-                    // Add special script to fix keyboard handling during voice chat for Copilot
-                    self.injectCopilotKeyboardFixScript(webView)
                 }
             }
         }
@@ -767,59 +764,6 @@ class WebViewCache: ObservableObject {
                 print("Error injecting Copilot audio cleanup: \(error)")
             } else {
                 print("Successfully injected Copilot audio cleanup")
-            }
-        }
-    }
-    
-    // New method to fix keyboard handling for Copilot voice chat
-    private func injectCopilotKeyboardFixScript(_ webView: WKWebView) {
-        let script = """
-        (function() {
-            // Check if already injected
-            if (window._copilotKeyboardFixActive) return;
-            window._copilotKeyboardFixActive = true;
-            
-            console.log('Installing Copilot voice chat keyboard fix');
-            
-            // Function to prevent key events from propagating outside the webview during voice chat
-            function handleKeyDown(event) {
-                // Check if we're in voice chat mode
-                const isVoiceChatActive = document.querySelectorAll(
-                    '[aria-label="Stop voice input"], ' + 
-                    '.voice-input-container:not(.hidden), ' + 
-                    '[data-testid="voice-input-button"].active, ' +
-                    '.voice-input-active, ' +
-                    '.sydney-voice-input'
-                ).length > 0;
-                
-                if (isVoiceChatActive) {
-                    // Only for non-modifier keys like letters, numbers, etc.
-                    if (!event.metaKey && !event.ctrlKey && !event.altKey) {
-                        // Special case for ESC key
-                        if (event.key === 'Escape') {
-                            // Let ESC pass through as it's handled explicitly elsewhere
-                            return;
-                        }
-                        
-                        // Stop propagation of all other keys during voice chat
-                        // This will prevent them from reaching the app and potentially closing it
-                        event.stopPropagation();
-                    }
-                }
-            }
-            
-            // Add the event listener at the capture phase to intercept events early
-            document.addEventListener('keydown', handleKeyDown, true);
-            
-            console.log('Copilot voice chat keyboard fix installed');
-        })();
-        """
-        
-        webView.evaluateJavaScript(script) { (result, error) in
-            if let error = error {
-                print("Error injecting Copilot keyboard fix: \(error)")
-            } else {
-                print("Successfully injected Copilot keyboard fix")
             }
         }
     }

@@ -21,8 +21,8 @@ class PreferencesManager: ObservableObject {
         }
     }
     
-    // Make shortcuts a read-only property with fixed value
-    var shortcuts: [String: String] = [
+    // Fixed shortcuts - only Command+E is supported
+    let shortcuts: [String: String] = [
         "toggleWindow": "⌘E"
     ]
     
@@ -30,10 +30,7 @@ class PreferencesManager: ObservableObject {
         self.openAtLogin = UserDefaults.standard.bool(forKey: "openAtLogin")
         self.alwaysOnTop = UserDefaults.standard.bool(forKey: "alwaysOnTop")
         
-        // Always use ⌘E regardless of what might be stored in UserDefaults
-        self.shortcuts = [
-            "toggleWindow": "⌘E"
-        ]
+        // No attempt to load shortcuts from UserDefaults - only Command+E is supported
         
         updateLoginItem()
     }
@@ -42,9 +39,9 @@ class PreferencesManager: ObservableObject {
         return shortcuts[key] ?? ""
     }
     
-    // This method no longer changes the shortcut
+    // This method is kept but does nothing - shortcuts cannot be changed
     func setShortcut(_ shortcut: String, for key: String) {
-        // Do nothing - shortcuts can't be changed
+        // No implementation - shortcuts are fixed
     }
     
     // Toggle always on top setting
@@ -58,7 +55,7 @@ class PreferencesManager: ObservableObject {
     }
     
     func resetToDefaults() {
-        // No need to update shortcuts as they're now fixed
+        // No need to reset shortcuts since they're fixed
     }
     
     private func updateLoginItem() {
