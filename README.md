@@ -26,7 +26,6 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - **Always on Top Mode**: Keep the window visible even when clicking outside
 - **Pinnable Interface**: Pin the AI interface to keep it accessible while working in other applications
 - **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
-- **Quick Service Switching**: Dedicated keyboard shortcuts for each AI service
 - **Native Performance**: Built as a native macOS app for optimal speed and reliability
 - **Persistent Sessions**: Maintains context across app restarts
 - **Resource Efficient**: Lightweight compared to multiple browser tabs
@@ -60,7 +59,6 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 - Use ⌘E to quickly show/hide the Apple AI window from any application
 - Enable "Always on Top" when you need to reference AI responses while working in another app
 - Pin the interface to keep it accessible at all times while working
-- Use the service-specific shortcuts (⌘⌥1-6) to quickly switch between AI providers
 - Pin the app to your menu bar for easy access
 - Use standard keyboard shortcuts (⌘C, ⌘V, ⌘A) in all AI chat input fields
 
@@ -95,7 +93,10 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 2. **First Launch Security**
    - When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
    - This is a normal security measure to ensure the app is from a trusted source
+   
+   ![Security Warning](privacyissues.png)
    - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
+
 
 ## Security Considerations
 
