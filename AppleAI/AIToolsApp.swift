@@ -17,6 +17,8 @@ struct AIToolsApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager!
     private var microphoneMonitorTimer: Timer?
+    private var keyEventMonitor: Any?
+    private var flagsEventMonitor: Any?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set activation policy to accessory (menu bar app)
@@ -29,7 +31,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup application main menu with keyboard shortcut support
         setupMainMenu()
         
-        // Register for global keyboard shortcut at application level
+        // MAXIMUM PROTECTION: Install truly global keyboard monitors
+        setupApplicationWideKeyboardBlocker()
+        
+        // Also install our regular keyboard handlers for when in text fields
         setupKeyboardEvents()
         
         // Prevent app termination by adding a persistent window
@@ -49,6 +54,191 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start a periodic microphone monitor to prevent the microphone
         // from staying active when it shouldn't be
         startMicrophoneMonitor()
+    }
+    
+    // FORTRESS MODE: This aggressively blocks ALL keyboard events system-wide
+    // except for Command+E. Nothing else gets through.
+    private func setupApplicationWideKeyboardBlocker() {
+        // Remove any existing monitors
+        if let monitor = keyEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = flagsEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        
+        print("Installing FORTRESS MODE keyboard protection")
+        
+        // LEVEL 1: Global monitor that catches ALL key events
+        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            // Global monitor can only observe events, not block them
+            // But we'll use it for logging suspicious activity
+            if let self = self {
+                // Log any key press when we're not expecting it
+                print("GLOBAL: Key event detected: \(event.keyCode) [\(event.charactersIgnoringModifiers ?? "")]")
+            }
+        }
+        
+        // LEVEL 2: Local monitor that catches ALL key down events
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self else { return event }
+            
+            print("FORTRESS: Intercepted key \(event.keyCode) [\(event.charactersIgnoringModifiers ?? "")]")
+            
+            // SPECIAL CASE 0: Block ESC key (0x35) in all contexts to prevent quitting
+            // Only block Enter key (0x24) when NOT in a text field
+            if event.keyCode == 0x35 || (event.keyCode == 0x24 && !self.isInTextInputField(event.window?.firstResponder)) {
+                print("FORTRESS: Blocking ESC/Enter key to prevent app quit")
+                return nil
+            }
+            
+            // SPECIAL CASE 1: ALWAYS allow Command+E to trigger our toggle
+            if event.modifierFlags.contains(.command) && 
+               event.keyCode == 0x0E && 
+               event.charactersIgnoringModifiers == "e" {
+                print("FORTRESS: Allowing Command+E shortcut")
+                return event
+            }
+            
+            // SPECIAL CASE 2: Allow Command+Q but ONLY if it comes from the menu
+            if event.modifierFlags.contains(.command) && 
+               event.keyCode == 0x0C && 
+               event.charactersIgnoringModifiers == "q" {
+                
+                // Only allow if the first responder is actually an NSMenuItem
+                if let firstResponder = NSApp.keyWindow?.firstResponder {
+                    let responderClass = String(describing: type(of: firstResponder))
+                    if responderClass.contains("NSMenu") || responderClass.contains("NSMenuItem") {
+                        print("FORTRESS: Allowing Command+Q from menu item")
+                        return event
+                    }
+                }
+                
+                print("FORTRESS: Blocking Command+Q not from menu")
+                return nil
+            }
+            
+            // SPECIAL CASE 3: Allow key events ONLY when we're in a known text input field
+            if let window = event.window, window.isKeyWindow,
+               let firstResponder = window.firstResponder {
+                
+                let responderClass = String(describing: type(of: firstResponder))
+                
+                // Check for our special KeyboardResponderView or its descendants
+                let isInKeyboardView = responderClass.contains("KeyboardResponderView") ||
+                                      self.isDescendantOfKeyboardResponderView(firstResponder)
+                
+                // Very strict check for text field context
+                let isTextInputField = 
+                    (responderClass.contains("NSTextInputContext") || 
+                     responderClass.contains("NSTextView") ||
+                     responderClass.contains("WKContentView") ||
+                     responderClass.contains("TextInputHost") ||
+                     responderClass.contains("NSTextField") ||
+                     responderClass.contains("UITextView")) || 
+                    // Verify we're truly in a web view input context by checking parent chain
+                    self.isInsideWebViewEditingContext(firstResponder) ||
+                    // Our KeyboardResponderView handles its own input checking
+                    isInKeyboardView
+                
+                if isTextInputField {
+                    // Inside text field, allow normal typing
+                    if event.modifierFlags.contains(.command) {
+                        // But only allow standard editing shortcuts
+                        let standardShortcuts: [UInt16] = [
+                            UInt16(0x00), // A - Select All
+                            UInt16(0x08), // C - Copy
+                            UInt16(0x09), // V - Paste
+                            UInt16(0x07), // X - Cut
+                            UInt16(0x0C), // Z - Undo
+                            UInt16(0x0D)  // Y - Redo
+                        ]
+                        
+                        if standardShortcuts.contains(event.keyCode) {
+                            print("FORTRESS: Allowing standard editing shortcut in text field")
+                            return event
+                        } else {
+                            print("FORTRESS: Blocking non-standard shortcut in text field: \(event.keyCode)")
+                            return nil
+                        }
+                    } else {
+                        // Block ESC key in all contexts, but allow Enter key in text fields for submission
+                        if event.keyCode == 0x35 {
+                            print("FORTRESS: Blocking ESC key in text field")
+                            return nil
+                        }
+                        
+                        // Allow normal typing in verified text fields
+                        print("FORTRESS: Allowing normal typing in text field")
+                        return event
+                    }
+                }
+            }
+            
+            // EXTREME FORTRESS: Block absolutely ALL other key events in all contexts
+            // This is the ultimate protection against unexpected quits
+            print("FORTRESS: Blocking key event \(event.keyCode) completely")
+            return nil
+        }
+        
+        // LEVEL 3: Also install protection for flags changed events (modifier keys)
+        flagsEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
+            // Allow all modifier key events as they don't trigger quits directly
+            return event
+        }
+    }
+    
+    // Helper to check if a responder is or is descended from KeyboardResponderView
+    private func isDescendantOfKeyboardResponderView(_ responder: NSResponder) -> Bool {
+        let responderClass = String(describing: type(of: responder))
+        if responderClass.contains("KeyboardResponderView") {
+            return true
+        }
+        
+        // Check up the responder chain
+        var current = responder.nextResponder
+        var depth = 0
+        while current != nil && depth < 5 {
+            let currentClass = String(describing: type(of: current!))
+            if currentClass.contains("KeyboardResponderView") {
+                return true
+            }
+            current = current!.nextResponder
+            depth += 1
+        }
+        
+        return false
+    }
+    
+    // Helper method to deeply verify we're in a true web view editing context
+    private func isInsideWebViewEditingContext(_ responder: NSResponder) -> Bool {
+        // First check directly
+        let responderClass = String(describing: type(of: responder))
+        if responderClass.contains("WKContentView") || 
+           responderClass.contains("WKWebView") {
+            return true
+        }
+        
+        // Recursively check responder chain up to 5 levels deep
+        var currentResponder = responder.nextResponder
+        var depth = 0
+        
+        while currentResponder != nil && depth < 5 {
+            let currentClass = String(describing: type(of: currentResponder!))
+            
+            if currentClass.contains("WKContentView") || 
+               currentClass.contains("WKWebView") || 
+               currentClass.contains("AIWebView") ||
+               currentClass.contains("KeyboardResponderView") {
+                return true
+            }
+            
+            currentResponder = currentResponder!.nextResponder
+            depth += 1
+        }
+        
+        // Not in a web view context
+        return false
     }
     
     // Stop any microphone usage to ensure privacy
@@ -306,6 +496,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Add a second fail-safe monitor to catch any events that might slip through
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Block ESC key (0x35) as a top priority, but only block Enter (0x24) outside text fields
+            if event.keyCode == 0x35 || (event.keyCode == 0x24 && !self.isInTextInputField(NSApp.keyWindow?.firstResponder)) {
+                print("FAIL-SAFE: Blocked ESC/Enter key")
+                return nil
+            }
+            
             // Last line of defense - specifically block ANY Command+Q/W that gets through
             if event.modifierFlags.contains(.command) {
                 if event.keyCode == 0x0C && event.charactersIgnoringModifiers == "q" {
@@ -409,5 +605,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Set the app's main menu
         NSApp.mainMenu = mainMenu
+    }
+    
+    deinit {
+        // Clean up event monitors
+        if let monitor = keyEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = flagsEventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+    }
+    
+    // Add a helper method to check if we're in a text input field where Enter should work
+    private func isInTextInputField(_ responder: NSResponder?) -> Bool {
+        guard let responder = responder else { return false }
+        
+        let responderClass = String(describing: type(of: responder))
+        
+        // Check if this is a text input context where Enter should be allowed
+        let isTextField = responderClass.contains("NSTextInputContext") || 
+                         responderClass.contains("NSTextView") ||
+                         responderClass.contains("WKContentView") ||
+                         responderClass.contains("TextInputHost") ||
+                         responderClass.contains("NSTextField") ||
+                         responderClass.contains("UITextView") ||
+                         responderClass.contains("KeyboardResponderView")
+        
+        if isTextField {
+            return true
+        }
+        
+        // Also check if we're in a web view context
+        if isInsideWebViewEditingContext(responder) {
+            return true
+        }
+        
+        return false
     }
 } 

@@ -1538,6 +1538,312 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
     private func updateCurrentServiceID(for service: AIService) {
         currentServiceID = service.id.uuidString
     }
+    
+    // Focus the current web view and attempt to give focus to any input fields
+    func focusCurrentWebView(for service: AIService) {
+        // Ensure we're on the main thread
+        if !Thread.isMainThread {
+            DispatchQueue.main.async {
+                self.focusCurrentWebView(for: service)
+            }
+            return
+        }
+        
+        print("Attempting to focus web view for service: \(service.name)")
+        
+        // Get the main app window
+        guard let window = NSApp.mainWindow else {
+            print("Cannot focus webview: No main window found")
+            return
+        }
+        
+        // The container view that holds our views
+        guard let containerView = window.contentView else {
+            print("Cannot focus webview: No container view found")
+            return
+        }
+        
+        // Use multiple strategies to find and focus the webview and its input field
+        
+        // Variables to track what we find
+        var foundWebView: WKWebView?
+        var foundResponder = false
+        
+        // 1. First look for a KeyboardResponderView which is our specialized input handler
+        for subview in containerView.subviews where !subview.isHidden {
+            if let responderView = subview as? KeyboardResponderView {
+                foundWebView = responderView.webView
+                print("Found KeyboardResponderView with webView: \(foundWebView != nil)")
+                
+                // Make the responder view first responder
+                window.makeFirstResponder(responderView)
+                
+                // Also directly make the webView first responder to be double-sure
+                if let webView = foundWebView {
+                    window.makeFirstResponder(webView)
+                }
+                
+                foundResponder = true
+                
+                // Trigger our mouse entered detection to activate keyboard mode
+                if let responder = responderView as? KeyboardResponderView {
+                    // Manually trigger mouse entered to enable keyboard mode
+                    let event = NSEvent.mouseEvent(
+                        with: .mouseEntered,
+                        location: NSPoint(x: responder.bounds.midX, y: responder.bounds.midY),
+                        modifierFlags: [],
+                        timestamp: 0,
+                        windowNumber: window.windowNumber,
+                        context: nil,
+                        eventNumber: 0,
+                        clickCount: 1,
+                        pressure: 0
+                    )
+                    if let event = event {
+                        responder.mouseEntered(with: event)
+                    }
+                }
+                
+                break
+            }
+        }
+        
+        // 2. If we couldn't find a responder view, try to find any WKWebView directly
+        if !foundResponder || foundWebView == nil {
+            // Recursive function to find WKWebView in the view hierarchy
+            func findWebView(in view: NSView) -> WKWebView? {
+                if let webView = view as? WKWebView {
+                    return webView
+                }
+                
+                for subview in view.subviews where !subview.isHidden {
+                    if let webView = findWebView(in: subview) {
+                        return webView
+                    }
+                }
+                
+                return nil
+            }
+            
+            // Find the visible WKWebView
+            foundWebView = findWebView(in: containerView)
+            
+            // Make it first responder if found
+            if let webView = foundWebView {
+                print("Found WKWebView directly")
+                window.makeFirstResponder(webView)
+            }
+        }
+        
+        // 3. Use WebViewCache to get the webview directly as a final fallback
+        if foundWebView == nil {
+            foundWebView = WebViewCache.shared.getWebView(for: service)
+            print("Getting webView from WebViewCache: \(foundWebView != nil)")
+            if let webView = foundWebView {
+                window.makeFirstResponder(webView)
+            }
+        }
+        
+        // 4. ULTRA-AGGRESSIVE INPUT FOCUSING: Use multiple approaches with different delays
+        if let webView = foundWebView {
+            print("Injecting focus scripts to find input field")
+            
+            // Try multiple focus techniques with varied timing
+            // This is necessary because different services load at different speeds
+            let delays: [TimeInterval] = [0.1, 0.3, 0.6, 1.0, 2.0, 3.0]
+            
+            for delay in delays {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    // Ensure webView is still valid before proceeding
+                    guard webView.window != nil else { return }
+                    
+                    // Make sure webView is first responder
+                    window.makeFirstResponder(webView)
+                    
+                    // Try multiple input focusing techniques
+                    self.injectComprehensiveFocusScript(webView, attemptNumber: Int(delay * 10))
+                }
+            }
+            
+            // Also update our responder chain status
+            if let view = foundWebView?.superview as? KeyboardResponderView {
+                view.isLikelyInInputField = true
+                view.keyboardModeActive = true
+            }
+        }
+    }
+    
+    // Enhanced focus script that tries multiple techniques to focus inputs
+    private func injectComprehensiveFocusScript(_ webView: WKWebView, attemptNumber: Int) {
+        // This script combines multiple approaches to activate input fields:
+        // 1. Direct focusing of known input elements
+        // 2. Click simulation on input areas
+        // 3. Specialized handling for common AI interfaces
+        let script = """
+        (function() {
+            console.log('Focus attempt #\(attemptNumber)');
+            
+            // Helper to check if element is visible
+            function isVisible(el) {
+                if (!el) return false;
+                const rect = el.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0 &&
+                       rect.top >= 0 && rect.left >= 0 &&
+                       rect.top < window.innerHeight && rect.left < window.innerWidth;
+            }
+            
+            // STRATEGY 1: Focus inputs directly
+            function focusInputDirectly() {
+                // Try all possible inputs in priority order
+                const selectors = [
+                    // ChatGPT specific
+                    '[data-testid="chat-input-textbox"]', 
+                    '[data-testid="text-area-input"]',
+                    
+                    // Claude specific
+                    '.ProseMirror[contenteditable="true"]',
+                    '.claude-input',
+                    
+                    // Standard inputs
+                    'textarea', 
+                    'input[type="text"]',
+                    
+                    // Generic AI inputs
+                    '[contenteditable="true"]',
+                    '.chat-input', 
+                    '.message-input',
+                    '[role="textbox"]'
+                ];
+                
+                for (const selector of selectors) {
+                    const elements = document.querySelectorAll(selector);
+                    for (const el of elements) {
+                        if (isVisible(el)) {
+                            el.focus();
+                            console.log('Focused element:', selector);
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            // STRATEGY 2: Click on inputs and areas that might reveal inputs
+            function simulateClicks() {
+                // Areas that might reveal inputs when clicked
+                const clickSelectors = [
+                    // Bottom of the page where inputs often are
+                    '.chat-interface',
+                    '.chat-input-container',
+                    '.input-area',
+                    
+                    // ChatGPT specific
+                    '.flex.w-full.items-center',
+                    
+                    // Claude specific
+                    '.claude-input-container',
+                    
+                    // Last resort - anything that looks like it might be an input area
+                    '.input',
+                    '.textarea'
+                ];
+                
+                for (const selector of clickSelectors) {
+                    const elements = document.querySelectorAll(selector);
+                    for (const el of elements) {
+                        if (isVisible(el)) {
+                            el.click();
+                            console.log('Clicked on:', selector);
+                            
+                            // After clicking, try focusing inputs again
+                            setTimeout(focusInputDirectly, 50);
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            // STRATEGY 3: Click at typical input locations
+            function clickAtCommonInputLocations() {
+                // Click at the bottom center where inputs usually are
+                const clickSpots = [
+                    { x: window.innerWidth / 2, y: window.innerHeight - 100 },
+                    { x: window.innerWidth / 2, y: window.innerHeight - 150 },
+                    { x: window.innerWidth / 2, y: window.innerHeight - 50 }
+                ];
+                
+                for (const spot of clickSpots) {
+                    // Create a simulated click
+                    const clickEvent = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true,
+                        clientX: spot.x,
+                        clientY: spot.y
+                    });
+                    
+                    // Dispatch the click at the document's element at that position
+                    const element = document.elementFromPoint(spot.x, spot.y);
+                    if (element) {
+                        element.dispatchEvent(clickEvent);
+                        console.log('Clicked at position:', spot);
+                        
+                        // Try focusing again after click
+                        setTimeout(focusInputDirectly, 50);
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            
+            // Try all strategies in sequence
+            let success = focusInputDirectly();
+            
+            if (!success) {
+                success = simulateClicks();
+            }
+            
+            if (!success) {
+                success = clickAtCommonInputLocations();
+            }
+            
+            // Last resort - try to click and focus body
+            if (!success && document.body) {
+                document.body.click();
+                document.body.focus();
+                
+                // Try one more time after body interaction
+                setTimeout(focusInputDirectly, 100);
+                success = true;
+            }
+            
+            // After any positive result, schedule one more focus attempt
+            if (success) {
+                setTimeout(focusInputDirectly, 200);
+            }
+            
+            return { 
+                success: success,
+                attempt: \(attemptNumber),
+                activeElement: document.activeElement ? document.activeElement.tagName : 'NONE'
+            };
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (result, error) in
+            if let error = error {
+                print("Focus error (attempt \(attemptNumber)): \(error)")
+            } else if let result = result as? [String: Any],
+                      let success = result["success"] as? Bool,
+                      let activeElement = result["activeElement"] as? String {
+                print("Focus attempt \(attemptNumber): success=\(success), activeElement=\(activeElement)")
+            }
+        }
+    }
 }
 
 // A coordinator class to handle WKWebView callbacks
@@ -1594,6 +1900,10 @@ class KeyboardResponderView: NSView {
     private var focusAttemptTimer: Timer?
     // Track if we've received focus yet
     private var hasFocus = false
+    // Track if keyboard mode is active - make internal instead of private
+    internal var keyboardModeActive = false
+    // Track if we're likely in an input field - make internal instead of private
+    internal var isLikelyInInputField = false
     
     init(webView: WKWebView) {
         self.webView = webView
@@ -1601,10 +1911,124 @@ class KeyboardResponderView: NSView {
         
         // Start focus attempt timer
         startFocusAttemptTimer()
+        
+        // Install the keyboard event trap, but with better input detection
+        setupKeyboardTrap()
+        
+        // Start recurring checks for input field status
+        startInputFieldDetectionTimer()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // Create a keyboard event trap that's smarter about input fields
+    private func setupKeyboardTrap() {
+        // Create a tracking area that covers the entire view
+        // This ensures we get mouse events to detect when cursor enters/exits
+        let trackingArea = NSTrackingArea(
+            rect: .zero,
+            options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect, .enabledDuringMouseDrag],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+    }
+    
+    // Detect when mouse enters our view to activate keyboard mode
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        keyboardModeActive = true
+        print("Keyboard mode activated - inside webview area")
+        
+        // Check for input field immediately when mouse enters
+        checkForInputFieldStatus()
+    }
+    
+    // Detect when mouse exits our view to deactivate keyboard mode
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        keyboardModeActive = false
+        isLikelyInInputField = false
+        print("Keyboard mode deactivated - outside webview area")
+    }
+    
+    // Periodically check if we're in an input field
+    private func startInputFieldDetectionTimer() {
+        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard let self = self, self.keyboardModeActive else { return }
+            
+            // Check if we're likely in an input field
+            self.checkForInputFieldStatus()
+        }
+    }
+    
+    // Check if we're in an input field by asking the webView
+    private func checkForInputFieldStatus() {
+        guard let webView = webView else { return }
+        
+        // Use JavaScript to check if cursor is in an input field
+        let script = """
+        (function() {
+            // Check if any input element is focused
+            const activeElement = document.activeElement;
+            
+            // Detect standard input elements
+            const isInput = activeElement.tagName === 'INPUT' || 
+                          activeElement.tagName === 'TEXTAREA' || 
+                          activeElement.hasAttribute('contenteditable');
+            
+            // For ChatGPT special case
+            const isChatGPTInput = document.querySelector('[data-testid="chat-input-textbox"]') === activeElement;
+            
+            // For Claude special case
+            const isClaudeInput = activeElement.classList.contains('ProseMirror') || 
+                                activeElement.classList.contains('claude-input');
+            
+            // Generic AI assistants may use div with contenteditable
+            const isGenericAIInput = activeElement.hasAttribute('contenteditable') || 
+                                  (activeElement.role === 'textbox');
+            
+            return {
+                activeTagName: activeElement.tagName,
+                isInputElement: isInput || isChatGPTInput || isClaudeInput || isGenericAIInput,
+                hasFocus: document.hasFocus()
+            };
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { [weak self] (result, error) in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error checking input status: \(error)")
+                // Assume we're not in an input field on error
+                self.isLikelyInInputField = false
+                return
+            }
+            
+            if let result = result as? [String: Any],
+               let isInputElement = result["isInputElement"] as? Bool,
+               let hasFocus = result["hasFocus"] as? Bool {
+                
+                let wasInInputField = self.isLikelyInInputField
+                self.isLikelyInInputField = isInputElement && hasFocus
+                
+                // Debug info
+                if let activeTagName = result["activeTagName"] as? String {
+                    print("Active element: \(activeTagName), IsInput: \(isInputElement), HasFocus: \(hasFocus)")
+                }
+                
+                if wasInInputField != self.isLikelyInInputField {
+                    if self.isLikelyInInputField {
+                        print("✅ Input field detected - enabling typing")
+                    } else {
+                        print("❌ No input field detected - blocking keypresses")
+                    }
+                }
+            }
+        }
     }
     
     // Start a timer that repeatedly tries to grab focus
@@ -1620,8 +2044,8 @@ class KeyboardResponderView: NSView {
             }
             
             // Attempt to become first responder
-        if let window = self.window {
-            window.makeFirstResponder(self)
+            if let window = self.window {
+                window.makeFirstResponder(self)
                 
                 // If we have focus, attempt to push it to the webView if appropriate
                 if window.firstResponder === self {
@@ -1698,6 +2122,7 @@ class KeyboardResponderView: NSView {
                 setTimeout(attemptFocus, 200);
                 setTimeout(attemptFocus, 500);
                 setTimeout(attemptFocus, 1000);
+                setTimeout(attemptFocus, 2000);
             }
             
             return success;
@@ -1709,8 +2134,90 @@ class KeyboardResponderView: NSView {
                 print("Error injecting focus script: \(error)")
             } else if let success = result as? Bool, success {
                 print("Successfully focused input element in webView")
+                
+                // If focus successful, update our status
+                self.isLikelyInInputField = true
             } else {
                 print("Could not find input element to focus")
+                
+                // If no input element found, try a more aggressive approach that uses click events
+                self.injectAggressiveFocusScript(webView)
+            }
+        }
+    }
+    
+    // More aggressive focus script that tries to simulate clicks on the input area
+    private func injectAggressiveFocusScript(_ webView: WKWebView) {
+        let script = """
+        (function() {
+            // Find any chat box or AI input area and simulate clicks
+            function clickChatArea() {
+                // First try known chat UI containers
+                const chatContainers = document.querySelectorAll(
+                    '.chat-container, .conversation-container, .message-list, .chat-view, ' +
+                    '.model-response-view, .chat-interface, [data-testid="conversation-turn-"]'
+                );
+                
+                for (const container of chatContainers) {
+                    if (container.getBoundingClientRect().height > 0) {
+                        // Click in the middle of the container
+                        const rect = container.getBoundingClientRect();
+                        const x = rect.left + rect.width / 2;
+                        const y = rect.bottom - 50; // Near the bottom where inputs usually are
+                        
+                        console.log('Clicking chat container at', x, y);
+                        
+                        // Create and dispatch mouse events
+                        ['mousedown', 'mouseup', 'click'].forEach(type => {
+                            const event = new MouseEvent(type, {
+                                bubbles: true,
+                                cancelable: true,
+                                view: window,
+                                clientX: x,
+                                clientY: y
+                            });
+                            container.dispatchEvent(event);
+                        });
+                        return true;
+                    }
+                }
+                
+                // If that didn't work, try clicking at the bottom of the window where inputs usually are
+                const x = window.innerWidth / 2;
+                const y = window.innerHeight - 100;
+                
+                console.log('Clicking bottom of window at', x, y);
+                
+                // Create a temporary clickable element
+                const clickTarget = document.createElement('div');
+                clickTarget.style.position = 'fixed';
+                clickTarget.style.left = '0';
+                clickTarget.style.right = '0';
+                clickTarget.style.bottom = '0';
+                clickTarget.style.height = '200px';
+                clickTarget.style.zIndex = '9999';
+                document.body.appendChild(clickTarget);
+                
+                // Click it
+                clickTarget.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(clickTarget);
+                }, 100);
+                
+                return true;
+            }
+            
+            // Try clicking
+            return clickChatArea();
+        })();
+        """
+        
+        webView.evaluateJavaScript(script) { (_, _) in
+            // After aggressive focus attempt, try looking for input fields again after a delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.injectFocusScript(webView)
             }
         }
     }
@@ -1723,7 +2230,7 @@ class KeyboardResponderView: NSView {
         super.viewDidMoveToWindow()
         
         // When added to a window, try to grab focus
-        if let window = self.window {
+            if let window = self.window {
             startFocusAttemptTimer()
             window.makeFirstResponder(self)
         }
@@ -1749,160 +2256,157 @@ class KeyboardResponderView: NSView {
         return super.becomeFirstResponder()
     }
     
+    // BALANCED APPROACH: Allow typing in detected input fields, block elsewhere
     override func keyDown(with event: NSEvent) {
-        // BLOCK EVERYTHING that could possibly quit the app
+        print("WEBVIEW KEY: Key down \(event.keyCode)")
         
-        // First, specifically block Command+Q and Command+W to prevent quitting
+        // SPECIAL CASE 0: ALWAYS block ESC key (0x35) to prevent app from quitting
+        // But only block Enter key (0x24) when NOT in keyboard mode
+        if event.keyCode == 0x35 || (event.keyCode == 0x24 && !keyboardModeActive) {
+            print("WEBVIEW: Blocking ESC/Enter key to prevent app quit")
+            return
+        }
+        
+        // SPECIAL CASE 1: ALWAYS allow Command+E to toggle window
+        if event.modifierFlags.contains(.command) && 
+           event.keyCode == 0x0E && 
+           event.charactersIgnoringModifiers == "e" {
+            // This is our app's main shortcut - let it through to top level
+            NSApp.sendAction(Selector(("togglePopupWindow")), to: nil, from: nil)
+            print("WEBVIEW: Allowed Command+E toggle")
+            return
+        }
+        
+        // CASE 2: Block Command+Q and Command+W regardless of context
         if event.modifierFlags.contains(.command) {
             if event.keyCode == 0x0C && event.charactersIgnoringModifiers == "q" {
-                print("KeyboardResponderView: Blocking Command+Q")
-                return // Block Command+Q - don't pass it anywhere
+                print("WEBVIEW: Blocking Command+Q")
+                return // Block quit
             }
             
             if event.keyCode == 0x0D && event.charactersIgnoringModifiers == "w" {
-                print("KeyboardResponderView: Blocking Command+W")
-                return // Block Command+W - don't pass it anywhere
+                print("WEBVIEW: Blocking Command+W")
+                return // Block close
             }
-            
-            // Handle standard editing shortcuts (copy, paste, select all, etc)
-                if handleStandardShortcut(event) {
-                return // We've handled it, don't do anything else
-            }
-            
-            // Block all other command shortcuts
-            print("KeyboardResponderView: Blocking command shortcut: \(event.keyCode)")
-            return // Don't pass it along
         }
         
-        // Now, we block ALL key events that aren't in a webView context
-        // We only allow key events if:
-        // 1. The webView exists and is a descendant of this view
-        // 2. The webView is the first responder or has focus
-        if let webView = webView,
-           webView.isDescendant(of: self),
-           (webView.acceptsFirstResponder && 
-            (window?.firstResponder === webView || NSApp.isActive)) {
+        // CASE 3: Allow typing in detected input fields
+        if keyboardModeActive {
+            // For standard editing shortcuts in keyboard mode
+            if event.modifierFlags.contains(.command) {
+                // Only standard editing shortcuts
+                let editingShortcuts: [UInt16: String] = [
+                    0x00: "selectAll:", // A
+                    0x08: "copy:",      // C
+                    0x09: "paste:",     // V
+                    0x07: "cut:",       // X
+                    0x0C: "undo:",      // Z
+                    0x0D: "redo:"       // Y
+                ]
+                
+                if let selector = editingShortcuts[event.keyCode], 
+                   let webView = self.webView {
+                    print("WEBVIEW: Allowing editing shortcut \(selector)")
+                    webView.performSelector(onMainThread: Selector(selector), with: nil, waitUntilDone: false)
+                    return
+                }
+                
+                // Block all other command shortcuts
+                print("WEBVIEW: Blocking command shortcut \(event.keyCode)")
+                return
+            }
             
-            // Pass key events to the webview only if they're likely to be text input
-            // based on key code ranges for alphanumeric and common typing keys
-            let keyCode = event.keyCode
-            let isTypingKey = (keyCode >= 0x00 && keyCode <= 0x2F) || // A-Z, numbers
-                             (keyCode >= 0x30 && keyCode <= 0x3F) || // Symbols
-                             (keyCode == 0x24) || // Return
-                             (keyCode == 0x30) || // Tab
-                             (keyCode == 0x31) || // Space
-                             (keyCode == 0x33) || // Delete
-                             (keyCode >= 0x41 && keyCode <= 0x4F) || // Special keys
-                             (keyCode >= 0x50 && keyCode <= 0x5F)    // Arrow keys
-            
-            if isTypingKey {
+            // IMPORTANT: ALWAYS forward regular typing to webView when in keyboard mode
+            // But never forward ESC key (Enter key is allowed for form submission)
+            if event.keyCode != 0x35, let webView = self.webView, webView.isDescendant(of: self) {
+                print("WEBVIEW: Forwarding typing key \(event.keyCode) to webView")
                 webView.keyDown(with: event)
                 return
             }
         }
         
-        // SAFETY NET: Block absolutely ALL other key events - never call super.keyDown
-        print("KeyboardResponderView: ULTRA-STRICT blocking of key event: \(event.keyCode)")
+        // Block all other key events
+        print("WEBVIEW: Blocking key \(event.keyCode)")
     }
     
-    override func keyUp(with event: NSEvent) {
-        // Block all keyUp events by default for safety
-        // Let only text editing keyUp events pass through to webview
-        if let webView = webView, 
-           webView.isDescendant(of: self),
-           window?.firstResponder === webView {
-            
-            let keyCode = event.keyCode
-            let isTypingKey = (keyCode >= 0x00 && keyCode <= 0x2F) || // A-Z, numbers
-                             (keyCode >= 0x30 && keyCode <= 0x3F) || // Symbols
-                             (keyCode == 0x24) || // Return
-                             (keyCode == 0x30) || // Tab
-                             (keyCode == 0x31) || // Space
-                             (keyCode == 0x33) || // Delete
-                             (keyCode >= 0x41 && keyCode <= 0x4F) || // Special keys
-                             (keyCode >= 0x50 && keyCode <= 0x5F)    // Arrow keys
-            
-            if isTypingKey {
-                webView.keyUp(with: event)
-            }
-        }
+    // Override to block ESC key, Command+Q/W but allow all other key equivalents in input contexts
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        print("WEBVIEW: performKeyEquivalent \(event.keyCode)")
         
-        // Don't call super.keyUp - block by default
-    }
-    
-    // Helper method to handle standard keyboard shortcuts
-    private func handleStandardShortcut(_ event: NSEvent) -> Bool {
-        guard let webView = webView else { return false }
-        
-        // Keyboard shortcuts map for basic text operations
-        let shortcuts: [UInt16: Selector] = [
-            0x00: #selector(NSText.selectAll(_:)),          // A - Select All
-            0x08: #selector(NSText.copy(_:)),               // C - Copy
-            0x09: #selector(NSText.paste(_:)),              // V - Paste
-            0x07: #selector(NSText.cut(_:)),                // X - Cut
-            0x0C: Selector("undo:"),                        // Z - Undo
-            0x0D: Selector("redo:")                         // Y - Redo
-        ]
-        
-        // Special case for Command+E to toggle the window - always allow
-        if event.keyCode == 0x0E && event.charactersIgnoringModifiers == "e" {
-            // Find the menu bar manager and toggle the window
-            NSApp.sendAction(Selector(("togglePopupWindow")), to: nil, from: nil)
+        // BLOCK CASE 0: Always block ESC key, but only block Enter key when not in keyboard mode
+        if event.keyCode == 0x35 || (event.keyCode == 0x24 && !keyboardModeActive) {
+            print("WEBVIEW: Blocking ESC/Enter key from performKeyEquivalent")
             return true
         }
         
-        // If this is a standard shortcut we're handling
-        if let action = shortcuts[event.keyCode] {
-            // Only perform the action if we're in a text field context
-            if webView.isDescendant(of: self) && 
-               (window?.firstResponder === webView || NSApp.isActive) {
-                
-                webView.performSelector(onMainThread: action, with: nil, waitUntilDone: false)
+        // ALLOW CASE 1: Always allow Command+E to toggle window
+        if event.modifierFlags.contains(.command) && 
+           event.keyCode == 0x0E && 
+           event.charactersIgnoringModifiers == "e" {
+            // Send action to toggle window
+            NSApp.sendAction(Selector(("togglePopupWindow")), to: nil, from: nil)
+            print("WEBVIEW: Allowed Command+E toggle")
                 return true
             }
-            }
-            
-        // Return true for any command key to indicate we've "handled" it (by blocking it)
-                return true
-    }
-    
-    // Block ALL modifier key changes too for consistency
-    override func flagsChanged(with event: NSEvent) {
-        // Don't pass flag changes up the responder chain
-        // But do forward to webView for text input needs
-        if let webView = webView,
-           webView.isDescendant(of: self),
-           window?.firstResponder === webView {
-            webView.flagsChanged(with: event)
-        }
-    }
-    
-    // Override performKeyEquivalent to prevent system shortcuts
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        // Block Command+Q and Command+W
+        
+        // Specifically block Command+Q and Command+W 
         if event.modifierFlags.contains(.command) {
-            if event.keyCode == 0x0C && event.charactersIgnoringModifiers == "q" {
-                print("KeyboardResponderView: Blocking Command+Q in performKeyEquivalent")
-                return true // Return true to indicate we've handled it (by blocking it)
+            if event.keyCode == 0x0C || event.keyCode == 0x0D {
+                print("WEBVIEW: Blocking quit/close keyboard shortcut")
+                return true // Claim we handled it to prevent default action
             }
-            
-            if event.keyCode == 0x0D && event.charactersIgnoringModifiers == "w" {
-                print("KeyboardResponderView: Blocking Command+W in performKeyEquivalent")
-                return true // Return true to indicate we've handled it (by blocking it)
-            }
-            
-            // Special case for Command+E to toggle the window - always allow
-            if event.keyCode == 0x0E && event.charactersIgnoringModifiers == "e" {
-                // Let it go through to the menu
-        return false
-    }
-    
-            // Handle other standard shortcuts
-            return handleStandardShortcut(event)
         }
         
-        // Block all other key equivalents by default
+        // For all other key equivalents in keyboard mode, let them through to webView
+        if keyboardModeActive {
+            return false // Return false to let the event propagate to webView
+        }
+        
+        // Block all other key equivalents outside keyboard mode
         return true
+    }
+    
+    // Also simplify key up handling - always allow it in webview to match keyDown behavior
+    override func keyUp(with event: NSEvent) {
+        // Block ESC key up events (but allow Enter key in keyboard mode)
+        if event.keyCode == 0x35 || (event.keyCode == 0x24 && !keyboardModeActive) {
+            print("WEBVIEW: Blocking ESC/Enter key up")
+            return
+        }
+        
+        // Simply forward keyUp to webView when in keyboard mode
+        if keyboardModeActive, let webView = self.webView, webView.isDescendant(of: self) {
+            webView.keyUp(with: event)
+            return
+        }
+    }
+    
+    // Handle modifier key events with same approach
+    override func flagsChanged(with event: NSEvent) {
+        // Forward modifier keys in keyboard mode
+        if keyboardModeActive, let webView = self.webView, webView.isDescendant(of: self) {
+            webView.flagsChanged(with: event)
+            return
+        }
+    }
+    
+    // Override to make sure we get key events even in unusual circumstances
+    override var needsPanelToBecomeKey: Bool {
+        return true
+    }
+    
+    override func resignFirstResponder() -> Bool {
+        // Attempt to keep focus when possible
+        if keyboardModeActive {
+            // Try to retain focus in keyboard mode
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if let window = self.window {
+                    window.makeFirstResponder(self.webView)
+                }
+            }
+        }
+        return super.resignFirstResponder()
     }
 }
 
