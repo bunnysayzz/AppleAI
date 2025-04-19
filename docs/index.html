@@ -9,7 +9,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
         @import url('https://unpkg.com/normalize.css') layer(normalize);
 
-        @layer normalize, base, demo, stick, effect, srollbar, debug;
+        @layer normalize, base, demo, stick, effect, scrollbar, debug;
 
         @layer debug {
           [data-debug='true'] li {
@@ -141,7 +141,7 @@
             padding-left: 5rem;
           }
           section:last-of-type {
-            min-height: 100vh;
+            min-height: 70vh;
             display: flex;
             place-items: center;
             width: 100%;
@@ -211,7 +211,7 @@
             --font-size-min: 24;
             --font-level: 8;
             text-wrap: pretty;
-            line-height: 0.8;
+            line-height: 0.9;
             margin: 0;
             background: linear-gradient(
               canvasText 60%,
@@ -241,6 +241,8 @@
             --font-width-min: 375;
             --font-width-max: 1500;
             --accent-color: oklch(70% 0.3 250);
+            --mobile-breakpoint: 768px;
+            --small-breakpoint: 480px;
           }
 
           html {
@@ -294,6 +296,7 @@
               'Helvetica Neue', Helvetica, Arial, sans-serif, system-ui;
             margin: 0;
             line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scrollbar */
           }
 
           body::before {
@@ -328,6 +331,7 @@
             display: grid;
             place-items: center;
             opacity: 0.8;
+            z-index: 100;
           }
 
           :where(.x-link, .bear-link):is(:hover, :focus-visible) {
@@ -416,21 +420,27 @@
             position: relative;
             z-index: 5;
             max-width: 800px;
+            width: 100%;
+            padding-inline: 1rem;
           }
           
           .ai-logos {
             display: flex;
             justify-content: center;
-            gap: 2rem;
-            margin-top: 5rem;
-            margin-bottom: 5rem;
+            gap: clamp(1rem, 3vw, 2rem);
+            margin-top: 3rem;
+            margin-bottom: 3rem;
             flex-wrap: wrap;
             position: relative;
-            padding: 3rem;
+            padding: clamp(1.5rem, 4vw, 3rem);
             border-radius: 24px;
             background: color-mix(in srgb, canvasText 5%, transparent);
             backdrop-filter: blur(20px);
             box-shadow: 0 20px 80px -20px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
           }
           
           .ai-logos::before {
@@ -446,8 +456,8 @@
           }
           
           .ai-logo {
-            width: 80px;
-            height: 80px;
+            width: clamp(60px, 12vw, 80px);
+            height: clamp(60px, 12vw, 80px);
             border-radius: 16px;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             filter: drop-shadow(0 8px 12px rgba(0,0,0,0.1));
@@ -490,18 +500,19 @@
             align-items: center;
             gap: 0.75rem;
             margin-top: 2rem;
-            padding: 1rem 2rem;
+            padding: 0.75rem 1.5rem;
             background: var(--accent-color);
             color: color-mix(in srgb, canvas 90%, white);
             text-decoration: none;
             border-radius: 3rem;
-            font-size: 1.1rem;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
             font-weight: 600;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
             position: relative;
             isolation: isolate;
             overflow: hidden;
+            white-space: nowrap;
           }
           
           .download-link::before {
@@ -528,7 +539,7 @@
           
           .buttons {
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 1rem;
             margin-top: 2.5rem;
             position: relative;
@@ -537,26 +548,27 @@
           
           .feature-highlight {
             text-align: center;
-            margin-top: 8rem;
+            margin-top: 6rem;
             margin-bottom: 3rem;
             max-width: 800px;
             margin-inline: auto;
             position: relative;
+            padding-inline: 1rem;
           }
           
           .feature-highlight::before {
             content: '';
             position: absolute;
             width: 1px;
-            height: 80px;
+            height: 60px;
             background: linear-gradient(to bottom, transparent, color-mix(in srgb, canvasText 30%, transparent));
-            top: -100px;
+            top: -80px;
             left: 50%;
             transform: translateX(-50%);
           }
           
           .feature-title {
-            font-size: calc(var(--fluid-type) * 0.65);
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
             margin-bottom: 1.5rem;
             background: linear-gradient(
               135deg,
@@ -575,7 +587,7 @@
             max-width: 650px;
             margin: 0 auto;
             line-height: 1.7;
-            font-size: 1.15rem;
+            font-size: clamp(0.9rem, 2vw, 1.15rem);
           }
           
           section.content {
@@ -583,49 +595,162 @@
           }
           
           section:last-of-type {
-            margin-top: 4rem;
+            margin-top: 3rem;
           }
           
           section:last-of-type h2 {
             text-align: center;
             font-weight: 700;
-            font-size: calc(var(--fluid-type) * 1.1);
-            line-height: 1.2;
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            line-height: 1.3;
             letter-spacing: -0.02em;
             max-width: 800px;
             padding-inline: 2rem;
+            text-wrap: balance;
           }
           
+          /* Responsive styles */
           @media (max-width: 768px) {
             header {
               padding-inline: 2rem;
+              min-height: 90vh;
             }
             
             section:first-of-type {
               padding-left: 2rem;
-            }
-            
-            .ai-logo {
-              width: 70px;
-              height: 70px;
-            }
-            
-            .feature-title {
-              font-size: calc(var(--fluid-type) * 0.5);
-            }
-            
-            .feature-desc {
-              font-size: 1rem;
+              margin-top: 2rem;
+              font-size: 0.9em;
             }
             
             section:last-of-type h2 {
               font-size: calc(var(--fluid-type) * 0.9);
+              padding-inline: 1.5rem;
+              text-align: center;
+            }
+            
+            .hero-blob {
+              width: 150px;
+              height: 150px;
+              filter: blur(50px);
+            }
+            
+            .hero-blob:nth-child(2),
+            .hero-blob:nth-child(3),
+            .hero-blob:nth-child(4) {
+              width: 120px;
+              height: 120px;
+            }
+            
+            .buttons {
+              justify-content: center;
+            }
+            
+            .feature-highlight {
+              margin-top: 4rem;
+              margin-bottom: 2.5rem;
+            }
+            
+            .feature-highlight::before {
+              height: 40px;
+              top: -60px;
+            }
+            
+            h1 {
+              font-size: clamp(2.5rem, 10vw, 4rem);
+              line-height: 1;
+            }
+            
+            .github-text {
+              display: none;
+            }
+            
+            .github-link {
+              padding: 0.5rem;
+              border-radius: 50%;
+              right: 1rem;
+              top: 1rem;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            header {
+              padding-inline: 1.5rem;
+            }
+            
+            section:first-of-type {
+              padding-left: 1rem;
+              margin-top: 1rem;
+              font-size: 0.85em;
+            }
+            
+            section:last-of-type h2 {
+              font-size: calc(var(--fluid-type) * 0.8);
+              padding-inline: 1rem;
+            }
+            
+            .ai-logo {
+              width: clamp(45px, 10vw, 60px);
+              height: clamp(45px, 10vw, 60px);
+              border-radius: 12px;
+            }
+            
+            .ai-logo:hover {
+              transform: translateY(-8px) scale(1.1);
+            }
+            
+            .ai-logos {
+              gap: 1rem;
+              padding: 1.5rem;
+              border-radius: 16px;
+            }
+            
+            .hero-blob {
+              width: 120px;
+              height: 120px;
+              filter: blur(40px);
+            }
+            
+            .hero-blob:nth-child(2),
+            .hero-blob:nth-child(3),
+            .hero-blob:nth-child(4) {
+              width: 100px;
+              height: 100px;
+            }
+            
+            .feature-title {
+              font-size: 1.2rem;
+            }
+            
+            .feature-desc {
+              font-size: 0.9rem;
+            }
+            
+            .download-link {
+              font-size: 0.9rem;
+              padding: 0.6rem 1.2rem;
+            }
+            
+            .bear-link {
+              width: 40px;
+              left: 0.5rem;
+              top: 0.5rem;
+            }
+            
+            .feature-highlight {
+              margin-top: 3rem;
+              margin-bottom: 2rem;
+            }
+            
+            .feature-highlight::before {
+              height: 30px;
+              top: -40px;
             }
           }
           
           footer {
-            margin-top: 6rem;
+            margin-top: 4rem;
             position: relative;
+            padding-bottom: 1rem;
           }
           
           footer::before {
@@ -634,7 +759,7 @@
             width: 50%;
             height: 1px;
             background: color-mix(in srgb, canvasText 20%, transparent);
-            top: -3rem;
+            top: -2rem;
             left: 50%;
             transform: translateX(-50%);
           }
@@ -722,7 +847,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
       </svg>
-      GitHub
+      <span class="github-text">GitHub</span>
     </a>
     
     <a class="bear-link" href="https://github.com/bunnysayzz" target="_blank" rel="noreferrer noopener">
@@ -761,8 +886,14 @@
         let chromaEntry;
         let chromaExit;
         
-        // Auto-scroll functionality
+        // Check if device is mobile
+        const isMobile = window.innerWidth < 768;
+        
+        // Auto-scroll functionality - only on desktop
         const startAutoScroll = () => {
+          // Skip auto-scroll on mobile devices
+          if (isMobile) return;
+          
           // Get page height to determine scroll distance
           const totalHeight = document.body.scrollHeight - window.innerHeight;
           let scrollDuration = 15; // Duration in seconds for the entire scroll
@@ -797,7 +928,7 @@
           });
         };
         
-        // Start auto-scroll after 2 seconds
+        // Start auto-scroll after 2 seconds (desktop only)
         setTimeout(startAutoScroll, 2000);
 
         // Handle button hover effect
@@ -813,12 +944,13 @@
           });
         }
 
-        // Animate the blobs
+        // Animate the blobs - with reduced intensity on mobile
         const blobs = document.querySelectorAll('.hero-blob');
         blobs.forEach((blob, index) => {
+          const moveRange = isMobile ? 25 : 50;
           gsap.to(blob, {
-            x: gsap.utils.random(-50, 50),
-            y: gsap.utils.random(-50, 50),
+            x: gsap.utils.random(-moveRange, moveRange),
+            y: gsap.utils.random(-moveRange, moveRange),
             duration: gsap.utils.random(15, 25),
             repeat: -1,
             yoyo: true,
@@ -833,6 +965,10 @@
         import ScrollToPlugin from 'https://cdn.skypack.dev/gsap@3.12.0/ScrollToPlugin';
         gsap.registerPlugin(ScrollToPlugin);
         
+        // Responsive animation settings based on device
+        const scrollStartOffset = isMobile ? 50 : 100;
+        const scrollEndOffset = isMobile ? 50 : 100;
+        
         // Animate AI logos on scroll
         gsap.from('.ai-logos', {
           y: 50,
@@ -840,7 +976,7 @@
           duration: 1,
           scrollTrigger: {
             trigger: '.ai-logos',
-            start: 'top bottom-=100',
+            start: `top bottom-=${scrollStartOffset}`,
             end: 'top center',
             scrub: true
           }
@@ -853,7 +989,7 @@
           duration: 1,
           scrollTrigger: {
             trigger: '.feature-highlight',
-            start: 'top bottom-=100',
+            start: `top bottom-=${scrollStartOffset}`,
             end: 'top center',
             scrub: true
           }
@@ -866,8 +1002,8 @@
           duration: 1,
           scrollTrigger: {
             trigger: 'section:last-of-type',
-            start: 'top bottom-=50',
-            end: 'top center+=100',
+            start: `top bottom-=${scrollStartOffset/2}`,
+            end: `top center+=${scrollEndOffset}`,
             scrub: true
           }
         });
@@ -961,6 +1097,41 @@
             }
           )
         }
+        
+        // Add check for window resizing
+        window.addEventListener('resize', () => {
+          // Update mobile check
+          const newIsMobile = window.innerWidth < 768;
+          
+          // Only reload if mobile status changed (optional, can cause flickering)
+          // if (newIsMobile !== isMobile) {
+          //   location.reload();
+          // }
+          
+          // Adjust blob animations for new screen size
+          const updatedMoveRange = window.innerWidth < 768 ? 25 : 50;
+          blobs.forEach((blob) => {
+            gsap.killTweensOf(blob);
+            gsap.to(blob, {
+              x: gsap.utils.random(-updatedMoveRange, updatedMoveRange),
+              y: gsap.utils.random(-updatedMoveRange, updatedMoveRange),
+              duration: gsap.utils.random(15, 25),
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut"
+            });
+          });
+          
+          // Hide GitHub text on mobile
+          if (newIsMobile) {
+            const githubLink = document.querySelector('.github-text');
+            if (githubLink) {
+              githubLink.style.display = 'none';
+            }
+            document.querySelector('.github-link').style.borderRadius = '50%';
+            document.querySelector('.github-link').style.padding = '0.5rem';
+          }
+        });
     </script>
 </body>
 </html> 
