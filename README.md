@@ -2,9 +2,9 @@
 
 <div align="center">
   <hr>
-  <h2>💖 Support This Student Project 💖</h2>
+  <h2>⭐ Support Apple AI Development ⭐</h2>
   <p>👋 <strong>Hello there!</strong> I'm a college student who created Apple AI in my spare time between classes and assignments to make AI tools more accessible on macOS.</p>
-  <p><strong>⭐ If you find this tool helpful for your work or studies, please consider supporting its continued development: ⭐</strong></p>
+  <p><strong>If you find this tool valuable for your workflow, please consider supporting its continued development:</strong></p>
   
   <table>
     <tr>
