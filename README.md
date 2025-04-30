@@ -1,5 +1,25 @@
 # Apple AI
 
+<div align="center">
+  <p>👋 <strong>Hello there!</strong> I'm a solo developer who created Apple AI in my spare time to make AI tools more accessible on macOS.</p>
+  <p>If you find this tool helpful for your work or studies, please consider supporting its continued development:</p>
+  
+  <table>
+    <tr>
+      <td align="center">
+        <img src="upi.png" alt="UPI QR Code" width="200"/>
+        <p><strong>UPI</strong></p>
+      </td>
+      <td align="center">
+        <img src="paypal.png" alt="PayPal QR Code" width="200"/>
+        <p><strong>PayPal</strong></p>
+      </td>
+    </tr>
+  </table>
+  
+  <p><em>Your support helps cover server costs and enables me to dedicate more time to improving this free tool.<br>Every contribution, no matter how small, is deeply appreciated! ❤️</em></p>
+</div>
+
 A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
 
 ![Apple AI](interface.png)
