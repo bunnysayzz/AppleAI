@@ -1,8 +1,10 @@
 # Apple AI
 
 <div align="center">
-  <p>👋 <strong>Hello there!</strong> I'm a solo developer who created Apple AI in my spare time to make AI tools more accessible on macOS.</p>
-  <p>If you find this tool helpful for your work or studies, please consider supporting its continued development:</p>
+  <hr>
+  <h2>💖 Support This Student Project 💖</h2>
+  <p>👋 <strong>Hello there!</strong> I'm a college student who created Apple AI in my spare time between classes and assignments to make AI tools more accessible on macOS.</p>
+  <p><strong>⭐ If you find this tool helpful for your work or studies, please consider supporting its continued development: ⭐</strong></p>
   
   <table>
     <tr>
@@ -17,7 +19,8 @@
     </tr>
   </table>
   
-  <p><em>Your support helps cover server costs and enables me to dedicate more time to improving this free tool.<br>Every contribution, no matter how small, is deeply appreciated! ❤️</em></p>
+  <p><em><strong>Your support is incredibly motivating</strong> and helps me dedicate more time to bringing regular updates, adding new AI tools, and improving features.<br>Every contribution is a huge encouragement to continue this journey alongside my studies! ❤️</em></p>
+  <hr>
 </div>
 
 A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
