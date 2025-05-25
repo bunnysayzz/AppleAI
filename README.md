@@ -47,7 +47,7 @@ A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek,
 
 ## Overview
 
-[![Apple AI](https://github.com/user-attachments/assets/3cb46101-0ec4-49ea-9c50-99eaa6d8344b)](https://github.com/user-attachments/assets/3cb46101-0ec4-49ea-9c50-99eaa6d8344b)
+[![Apple AI](https://github.com/user-attachments/assets/25f7272c-8aef-445b-963f-c6a4637d2c63)](https://github.com/user-attachments/assets/25f7272c-8aef-445b-963f-c6a4637d2c63)
 
 Apple AI transforms how you interact with AI tools on your Mac by bringing together powerful AI assistants in one convenient menu bar application. Access it instantly from anywhere with the global ⌘E shortcut.
 
