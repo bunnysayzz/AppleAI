@@ -1,9 +1,27 @@
 # Apple AI
 
+## 🎉 Version 2.0 Now Available!
+
+A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
+
+## Download Now
+
+### Visit the Official Website
+
+- Go to [www.theappleai.tech](https://www.theappleai.tech) to download the latest version
+- **Version 2.0** features improved performance, enhanced UI, and exciting new features
+- Choose the appropriate download for your Mac (Universal DMG works for both Intel and Apple Silicon)
+
+### Quick Installation
+
+1. Open the downloaded DMG file
+2. Drag Apple AI.app to your Applications folder
+3. Launch the app from Applications or Spotlight
+
 <div align="center">
   <hr>
   <h2>⭐ Support Apple AI Development ⭐</h2>
-  <p>👋 <strong>Hello there!</strong> I'm a college student who created Apple AI in my spare time between classes and assignments to make AI tools more accessible on macOS.</p>
+  <p>Apple AI is an independent project committed to making AI tools more accessible and efficient on macOS.</p>
   <p><strong>If you find this tool valuable for your workflow, please consider supporting its continued development:</strong></p>
   
   <table>
@@ -19,11 +37,11 @@
     </tr>
   </table>
   
-  <p><em><strong>Your support is incredibly motivating</strong> and helps me dedicate more time to bringing regular updates, adding new AI tools, and improving features.<br>Every contribution is a huge encouragement to continue this journey alongside my studies! ❤️</em></p>
+  <p><em>Your support enables us to bring regular updates, integrate new AI services, and improve existing features.<br>Every contribution helps maintain and evolve this project. Thank you for your support! ❤️</em></p>
   <hr>
 </div>
 
-A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
+## App Preview
 
 ![Apple AI](interface.png)
 
@@ -64,7 +82,7 @@ Apple AI provides system-wide keyboard shortcuts for quick access:
 
 - **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
 - **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
-- 
+
 The global ⌘E shortcut works from any application, giving you instant access to AI assistance whenever you need it.
 
 ## Preferences
@@ -98,27 +116,22 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 
 ## Technical Details
 
-- Built natively for Apple Silicon and Intel Macs
-- Written in Swift using SwiftUI framework
-- Minimal CPU and memory footprint
-- Regular updates and maintenance
-- Active community support
+- **Architecture**: Native macOS app built for both Apple Silicon and Intel processors
+- **Framework**: Developed using Swift and SwiftUI for optimal performance and modern UI
+- **Performance**: Optimized for minimal CPU, memory, and battery usage
+- **Updates**: Regular maintenance and feature updates via the integrated update system
+- **Web Technologies**: Uses WKWebView for efficient rendering of AI service interfaces
+- **Data Storage**: All data stored locally in standard macOS app locations
+- **Support**: Dedicated support and active development community
 
-## Installation
+## Installation Notes
 
-1. **Download & Install**
-   - Visit the [Releases](https://github.com/bunnysayzz/appleai/releases) page
-   - Download the latest `Apple.AI.dmg` file
-   - Open the downloaded DMG file
-   - Drag Apple AI.app to your Applications folder
-   - Launch the app from Applications or Spotlight
-
-2. **First Launch Security**
-   - When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
-   - This is a normal security measure to ensure the app is from a trusted source
+### First Launch Security
+- When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
+- This is a normal security measure to ensure the app is from a trusted source
    
-   ![Security Warning](privacyissues.png)
-   - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
+![Security Warning](privacyissues.png)
+- If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
 
 ## Security Considerations
@@ -127,4 +140,18 @@ Apple AI is designed with privacy in mind:
 - The app simply provides a native interface to web-based AI services
 - No data is sent to any servers beyond what you directly input to each AI service
 - All preferences and settings are stored locally on your Mac
+
+## Compatibility
+
+### macOS Requirements
+- Apple AI works on macOS Monterey (12.0) and later
+- Compatible with both Apple Silicon (M1/M2/M3) and Intel Macs
+- For Intel Macs, the Universal DMG is recommended for best performance
+
+### Intel Mac Users
+If you're using an Intel Mac and encounter any issues:
+1. Download the "Apple_AI_Universal.dmg" from [www.theappleai.tech](https://www.theappleai.tech)
+2. Ensure Rosetta 2 is installed (your Mac will prompt you if needed)
+
+For detailed instructions, see the INTEL_MAC_USERS_README.txt included with the download.
 
