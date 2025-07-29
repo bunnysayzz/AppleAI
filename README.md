@@ -10,7 +10,6 @@ A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek,
 
 - Go to [www.theappleai.tech](https://www.theappleai.tech) to download the latest version
 - **Version 2.0** features improved performance, enhanced UI, and exciting new features
-- Choose the appropriate download for your Mac (Universal DMG works for both Intel and Apple Silicon)
 
 ### Quick Installation
 
@@ -58,6 +57,10 @@ Available AI services:
 - Perplexity
 - DeepSeek
 - Grok
+- Mistral AI
+- Google Gemini
+- Pi
+- Custom API
 
 Each assistant maintains its own persistent session, allowing you to seamlessly switch between them while preserving context and conversation history.
 
@@ -66,6 +69,8 @@ Each assistant maintains its own persistent session, allowing you to seamlessly 
 - **Global ⌘E Shortcut**: Toggle the app window from anywhere on your Mac with Command+E
 - **Always on Top Mode**: Keep the window visible even when clicking outside
 - **Pinnable Interface**: Pin the AI interface to keep it accessible while working in other applications
+- **Screenshot and Chat**: Take a screenshot and automatically open Apple AI with the captured image ready to be shared with your favorite AI assistant
+
 - **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
 - **Native Performance**: Built as a native macOS app for optimal speed and reliability
 - **Persistent Sessions**: Maintains context across app restarts
@@ -83,7 +88,6 @@ Apple AI provides system-wide keyboard shortcuts for quick access:
 - **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
 - **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
 
-The global ⌘E shortcut works from any application, giving you instant access to AI assistance whenever you need it.
 
 ## Preferences
 
@@ -95,14 +99,6 @@ Apple AI offers several customization options:
 
 To access preferences, click the Apple AI menu bar icon and select "Preferences".
 
-## Usage Tips
-
-- Use ⌘E to quickly show/hide the Apple AI window from any application
-- Enable "Always on Top" when you need to reference AI responses while working in another app
-- Pin the interface to keep it accessible at all times while working
-- Pin the app to your menu bar for easy access
-- Use standard keyboard shortcuts (⌘C, ⌘V, ⌘A) in all AI chat input fields
-
 ## Perfect For
 
 - **Developers**: Quick access to coding assistants like GitHub Copilot
@@ -113,16 +109,6 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 - **Students**: Research assistance and learning support
 - **Business Users**: Quick market research and analysis
 - **Data Scientists**: Rapid prototyping and code generation
-
-## Technical Details
-
-- **Architecture**: Native macOS app built for both Apple Silicon and Intel processors
-- **Framework**: Developed using Swift and SwiftUI for optimal performance and modern UI
-- **Performance**: Optimized for minimal CPU, memory, and battery usage
-- **Updates**: Regular maintenance and feature updates via the integrated update system
-- **Web Technologies**: Uses WKWebView for efficient rendering of AI service interfaces
-- **Data Storage**: All data stored locally in standard macOS app locations
-- **Support**: Dedicated support and active development community
 
 ## Installation Notes
 
@@ -145,13 +131,8 @@ Apple AI is designed with privacy in mind:
 
 ### macOS Requirements
 - Apple AI works on macOS Monterey (12.0) and later
-- Compatible with both Apple Silicon (M1/M2/M3) and Intel Macs
-- For Intel Macs, the Universal DMG is recommended for best performance
 
-### Intel Mac Users
-If you're using an Intel Mac and encounter any issues:
-1. Download the "Apple_AI_Universal.dmg" from [www.theappleai.tech](https://www.theappleai.tech)
-2. Ensure Rosetta 2 is installed (your Mac will prompt you if needed)
+- **Compatible with both Apple Silicon (M1/M2/M3) and Intel Macs**
 
-For detailed instructions, see the INTEL_MAC_USERS_README.txt included with the download.
+
 
