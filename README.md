@@ -1,8 +1,8 @@
 # Apple AI
 
-## 🎉 Version 2.0 Now Available!
+## 🎉 Version 2.0 Now Available! 🎉
 
-A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
+A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Copilot, DeepSeek, Grok, Mistral, Gemini, Pi, and more) + Custom API + Screenshot and Continue Chat into one streamlined interface, accessible anywhere with a global ⌘E shortcut. [Click here](https://www.theappleai.tech/pricing)
 
 ## Download Now
 
