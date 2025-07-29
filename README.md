@@ -81,7 +81,6 @@ Apple AI provides system-wide keyboard shortcuts for quick access:
 
 - **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
 - **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
-
 ## Preferences
 
 Apple AI offers several customization options:
@@ -106,12 +105,12 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 ## Installation Notes
 
 ### First Launch Security
-- When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
-- This is a normal security measure to ensure the app is from a trusted source
-   
-![Security Warning](requirements/privacyissues.png)
-- If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
+- When launching Apple AI for the first time, you may encounter a security warning due to macOS's Gatekeeper feature
+- Click "Done" one time to bypass the warning
+![Gatekeeper Warning](requirements/gatekeeperwarning.png)
 
+- Go to System Settings > Privacy & Security > Scroll to the bottom > click on "Open Anyway"
+![Security Warning](requirements/privacyissues.png)
 
 ## Security Considerations
 
