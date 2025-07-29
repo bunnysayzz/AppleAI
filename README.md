@@ -8,14 +8,8 @@ A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Cop
 
 ### Visit the Official Website
 
-- Go to [www.theappleai.tech](https://www.theappleai.tech) to download the latest version
+- Go to [www.theappleai.tech](https://www.theappleai.tech) to download the latest version of DMG
 - **Version 2.0** features improved performance, enhanced UI, and exciting new features
-
-### Quick Installation
-
-1. Open the downloaded DMG file
-2. Drag Apple AI.app to your Applications folder
-3. Launch the app from Applications or Spotlight
 
 <div align="center">
   <hr>
