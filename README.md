@@ -20,11 +20,11 @@ A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Cop
   <table>
     <tr>
       <td align="center">
-        <img src="upi.png" alt="UPI QR Code" width="200"/>
+        <img src="requirements/upi.png" alt="UPI QR Code" width="200"/>
         <p><strong>UPI</strong></p>
       </td>
       <td align="center">
-        <img src="paypal.png" alt="PayPal QR Code" width="200"/>
+        <img src="requirements/paypal.png" alt="PayPal QR Code" width="200"/>
         <p><strong>PayPal</strong></p>
       </td>
     </tr>
@@ -36,7 +36,7 @@ A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Cop
 
 ## App Preview
 
-![Apple AI](interface.png)
+![Apple AI](requirements/interface.png)
 
 ## Overview
 
@@ -82,7 +82,6 @@ Apple AI provides system-wide keyboard shortcuts for quick access:
 - **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
 - **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
 
-
 ## Preferences
 
 Apple AI offers several customization options:
@@ -110,7 +109,7 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 - When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
 - This is a normal security measure to ensure the app is from a trusted source
    
-![Security Warning](privacyissues.png)
+![Security Warning](requirements/privacyissues.png)
 - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
 
@@ -127,6 +126,3 @@ Apple AI is designed with privacy in mind:
 - Apple AI works on macOS Monterey (12.0) and later
 
 - **Compatible with both Apple Silicon (M1/M2/M3) and Intel Macs**
-
-
-
