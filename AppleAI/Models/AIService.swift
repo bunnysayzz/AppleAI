@@ -17,42 +17,15 @@ struct AIService: Identifiable, Hashable {
     }
 }
 
-// Predefined AI services
-let aiServices = [
-    AIService(
-        name: "ChatGPT",
-        icon: "AILogos/chatgpt",
-        url: URL(string: "https://chat.openai.com")!,
-        color: Color.green
-    ),
-    AIService(
-        name: "Claude",
-        icon: "AILogos/claude",
-        url: URL(string: "https://claude.ai")!,
-        color: Color.purple
-    ),
-    AIService(
-        name: "Copilot",
-        icon: "AILogos/copilot",
-        url: URL(string: "https://copilot.microsoft.com")!,
-        color: Color.blue
-    ),
-    AIService(
-        name: "Perplexity",
-        icon: "AILogos/perplexity",
-        url: URL(string: "https://www.perplexity.ai")!,
-        color: Color.orange
-    ),
-    AIService(
-        name: "DeepSeek",
-        icon: "AILogos/deekseek",
-        url: URL(string: "https://chat.deepseek.com")!,
-        color: Color.red
-    ),
-    AIService(
-        name: "Grok",
-        icon: "AILogos/grok",
-        url: URL(string: "https://grok.com/?referrer=website")!,
-        color: Color(red: 0.0, green: 0.6, blue: 0.9)
+// Demo version - Limited functionality
+// In the full version, this contains all AI service configurations
+let aiServices: [AIService] = {
+    // Only include a demo service in the public version
+    let demoService = AIService(
+        name: "Demo Mode",
+        icon: "AILogos/chatgpt",  // Using a single icon for demo
+        url: URL(string: "https://example.com")!,  // Dummy URL
+        color: Color.gray
     )
-] 
+    return [demoService]
+}() 

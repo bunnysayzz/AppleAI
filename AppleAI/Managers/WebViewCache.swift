@@ -22,17 +22,21 @@ class WebViewCache: ObservableObject {
     private var activeVoiceChatServices: Set<String> = []
     
     private init() {
-        // Completely disable persistent storage
-        disablePersistentStorageForWebKit()
+        // In demo version, we don't initialize any real functionality
+        // All web views will be created on-demand with limited capabilities
         
-        // Initialize web views for all services
-        preloadWebViews()
-        
-        // Pre-request microphone permission at startup once
-        requestSystemMicrophonePermission()
-        
-        // Set up notification observers for app state changes
-        setupAppStateObservers()
+        // Set up a placeholder for demo purposes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(showDemoModeAlert),
+            name: .init("DemoModeAlert"),
+            object: nil
+        )
+    }
+    
+    @objc private func showDemoModeAlert() {
+        // This would show a demo mode alert in the UI
+        print("Running in demo mode - full functionality not available")
     }
     
     deinit {
@@ -1338,165 +1342,43 @@ class WebViewCache: ObservableObject {
     }
     
     func webView(for service: AIService) -> WKWebView {
-        if let existingWebView = webViews[service.id.uuidString] {
-            return existingWebView
-        }
-        
-        // If web view doesn't exist (shouldn't happen normally), create it
-        createWebView(for: service)
-        return webViews[service.id.uuidString]!
+        // In demo mode, always return a new demo web view
+        return createWebView(for: service)
     }
     
     func createWebView(for service: AIService) -> WKWebView {
-        // Check if this is ChatGPT or Copilot to use special configuration
-        let isChatGPT = service.name == "ChatGPT"
-        let isCopilot = service.name == "Copilot"
-        
-        // Create and configure a WKWebViewConfiguration
+        // In demo mode, create a very basic web view with limited capabilities
         let configuration = WKWebViewConfiguration()
         
-        // Set up webpage preferences
+        // Disable all storage and caching
+        configuration.websiteDataStore = .nonPersistent()
+        
+        // Disable JavaScript and plugins
         let preferences = WKPreferences()
-        preferences.javaScriptCanOpenWindowsAutomatically = true
-        
-        // For ChatGPT, disable all features that might prompt for keychain
-        if isChatGPT {
-            if #available(macOS 11.0, *) {
-                preferences.isFraudulentWebsiteWarningEnabled = false
-            }
-            preferences.isTextInteractionEnabled = true
-        }
-        
-        let pagePreferences = WKWebpagePreferences()
-        pagePreferences.allowsContentJavaScript = true
-        configuration.defaultWebpagePreferences = pagePreferences
+        preferences.javaScriptEnabled = false
+        preferences.javaEnabled = false
+        preferences.plugInsEnabled = false
         configuration.preferences = preferences
         
-        // Use the shared process pool for all webviews for permission sharing
-        configuration.processPool = WebViewCache.sharedProcessPool
-        
-        // Always use non-persistent data store to avoid keychain issues
-        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        
-        // Create a user content controller and add our message handler
-        let contentController = WKUserContentController()
-        contentController.add(self, name: "mediaPermission")
-        
-        // For ChatGPT, add even stronger restrictions
-        if isChatGPT {
-            // Add ChatGPT-specific message handler
-            contentController.add(self, name: "chatGPTHandler")
-            
-            // Add script to block credentials
-            let credentialBlockerScript = WKUserScript(
-                source: """
-                // Block all credential storage APIs
-                if (window.PasswordCredential) { window.PasswordCredential = undefined; }
-                if (navigator.credentials) { navigator.credentials = undefined; }
-                
-                // Block access to keychain
-                if (window.WebAuthentication) { window.WebAuthentication = undefined; }
-                
-                console.log('Credential APIs blocked for ChatGPT');
-                """,
-                injectionTime: .atDocumentStart,
-                forMainFrameOnly: false
-            )
-            
-            contentController.addUserScript(credentialBlockerScript)
-        }
-        
-        // Add initialization script for all webviews
-        let userScript = WKUserScript(
-            source: """
-            // Initialize permission API hooks
-            if (typeof navigator.mediaDevices !== 'undefined') {
-                // Log all permission requests
-                navigator._mediaDevicesGetUserMedia = navigator.mediaDevices.getUserMedia;
-                navigator.mediaDevices.getUserMedia = async function(constraints) {
-                    console.log('getUserMedia called with:', constraints);
-                    
-                    // If this is an audio request, report it as voice chat starting
-                    if (constraints && constraints.audio) {
-                        try {
-                            window.webkit.messageHandlers.mediaPermission.postMessage({
-                                type: 'streamCreated',
-                                constraints: constraints
-                            });
-                        } catch (e) {
-                            console.error('Error sending message to Swift:', e);
-                        }
-                    }
-                    
-                    return await navigator._mediaDevicesGetUserMedia.call(this, constraints);
-                };
-                
-                // Track audio context creation which is often used for voice
-                const originalAudioContext = window.AudioContext || window.webkitAudioContext;
-                if (originalAudioContext) {
-                    window.AudioContext = window.webkitAudioContext = function() {
-                        const ctx = new originalAudioContext();
-                        console.log('AudioContext created - possible voice activity');
-                        return ctx;
-                    };
-                }
-            }
-            
-            // Initialize storage for active audio streams
-            if (!window.activeAudioStreams) {
-                window.activeAudioStreams = [];
-            }
-            """, 
-            injectionTime: .atDocumentStart, 
-            forMainFrameOnly: false
-        )
-        
-        contentController.addUserScript(userScript)
-        configuration.userContentController = contentController
-        
-        // Allow media without user action
-        configuration.mediaTypesRequiringUserActionForPlayback = []
-        
-        // Set a desktop-like user agent
-        let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
-        configuration.applicationNameForUserAgent = userAgent
-        
-        // Create the webView with the enhanced configuration
+        // Create a basic web view
         let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.customUserAgent = userAgent
+        webView.customUserAgent = "DemoMode/1.0"
         
-        // Create coordinator and set up delegate
-        let coordinator = WebViewCoordinator(AIWebView(url: service.url, service: service))
-        webView.navigationDelegate = coordinator
-        webView.uiDelegate = coordinator
-        
-        // Set up standard webview properties
-        webView.allowsBackForwardNavigationGestures = true
-        webView.allowsLinkPreview = true
-        webView.wantsLayer = true
-        
-        // For ChatGPT, add extra headers to prevent auth redirects
-        if isChatGPT {
-            var request = URLRequest(url: service.url)
-            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
-            request.setValue("no-store", forHTTPHeaderField: "Pragma")
-            webView.load(request)
-        } else if isCopilot {
-            var request = URLRequest(url: service.url)
-            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
-            request.setValue("no-store", forHTTPHeaderField: "Pragma")
-            webView.load(request)
-        } else {
-            // Load the URL normally for other services
-            webView.load(URLRequest(url: service.url))
-        }
-        
-        // Store the web view and its coordinator
-        webViews[service.id.uuidString] = webView
-        coordinators[service.id.uuidString] = coordinator
-        loadingStates[service.id.uuidString] = true
-        
-        // Inject permission fixer to make microphone access work without keychain
+        // Load a demo message instead of the actual service URL
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    background: #f5f5f7;
+                    color: #333;
         // Use immediate injection for ChatGPT and Copilot, delayed for others
         if isChatGPT || isCopilot {
             // For ChatGPT/Copilot, inject multiple times with different delays to ensure it works

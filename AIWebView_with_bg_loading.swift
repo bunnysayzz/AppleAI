@@ -22,12 +22,12 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate, WKUIDele
     
     // Pre-load all webviews for AI services
     private func preloadAllServices() {
-        for service in aiServices {
-            // Create and store a webview for each service
-            let webView = createWebView(for: service)
-            webviews[service.id] = webView
-            loadingStatus[service.id] = true
-            isLoading[service.id] = true
+        // Only load a single demo service in the public version
+        if let demoService = aiServices.first {
+            let webView = createWebView(for: demoService)
+            webviews[demoService.id] = webView
+            loadingStatus[demoService.id] = false
+            isLoading[demoService.id] = false
         }
     }
     
@@ -49,42 +49,47 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate, WKUIDele
         // Create a configuration for the webview
         let configuration = WKWebViewConfiguration()
         
-        // Set preferences for keyboard input
+        // Disable JavaScript execution
         let preferences = WKPreferences()
+        preferences.javaScriptEnabled = false
         
-        // Using the newer API for JavaScript
+        // Disable JavaScript in page preferences
         let pagePreferences = WKWebpagePreferences()
-        pagePreferences.allowsContentJavaScript = true
+        pagePreferences.allowsContentJavaScript = false
         configuration.defaultWebpagePreferences = pagePreferences
         
         configuration.preferences = preferences
         
-        // Create process pool and website data store
+        // Create process pool with limited capabilities
         let processPool = WKProcessPool()
         configuration.processPool = processPool
-        configuration.websiteDataStore = WKWebsiteDataStore.default()
         
-        // Set user agent
-        configuration.applicationNameForUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+        // Use non-persistent data store to prevent caching
+        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
         
-        // Create the web view
+        // Set a generic user agent
+        configuration.applicationNameForUserAgent = "Safari/605.1.15"
+        
+        // Create the web view with limited capabilities
         let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+        webView.customUserAgent = "Safari/605.1.15"
         
-        // Set delegates
+        // Set delegates but disable most functionality
         webView.navigationDelegate = self
         webView.uiDelegate = self
         
-        // Configure to receive and handle keyboard events
-        webView.allowsBackForwardNavigationGestures = true
-        webView.allowsLinkPreview = true
-        webView.wantsLayer = true
+        // Disable navigation and interactions
+        webView.allowsBackForwardNavigationGestures = false
+        webView.allowsLinkPreview = false
         
-        // Load the URL
-        webView.load(URLRequest(url: service.url))
-        
-        // Track last usage time
-        UserDefaults.standard.set(Date(), forKey: "lastUsed_\(service.name)")
+        // Don't load the actual URL, show a placeholder instead
+        let html = """
+        <html><body>
+            <h2>This is a demo version</h2>
+            <p>The full functionality is not available in this preview.</p>
+        </body></html>
+        """
+        webView.loadHTMLString(html, baseURL: nil)
         
         return webView
     }
