@@ -2,7 +2,8 @@ import SwiftUI
 import WebKit
 import AVFoundation
 
-class WebViewCache: ObservableObject {
+// MARK: - Modified for demo purposes - DO NOT USE IN PRODUCTION
+class DemoWebViewCache: NSObject, ObservableObject {
     static let shared = WebViewCache()
     
     @Published private var webViews: [String: WKWebView] = [:]
@@ -1337,72 +1338,35 @@ class WebViewCache: ObservableObject {
     
     private func preloadWebViews() {
         for service in aiServices {
-            createWebView(for: service)
-        }
+            demoCreateWebView()
+    // MARK: - Public Methods (Disabled in Demo Mode)
+    
+    // Critical function removed to prevent building
+    /*
+    func getWebView(for service: AIService) -> WKWebView {
+        // This function is intentionally removed in demo version
+        fatalError("This is a demo version. Full functionality not available.")
+    }
+    */
+    
+    // Demo function that doesn't actually work
+    private func demoGetWebView() -> Never {
+        fatalError("This is a demo version. Full functionality not available.")
+    }
     }
     
-    func webView(for service: AIService) -> WKWebView {
-        // In demo mode, always return a new demo web view
-        return createWebView(for: service)
-    }
-    
+    // Critical function removed to prevent building
+    /*
     func createWebView(for service: AIService) -> WKWebView {
-        // In demo mode, create a very basic web view with limited capabilities
-        let configuration = WKWebViewConfiguration()
-        
-        // Disable all storage and caching
-        configuration.websiteDataStore = .nonPersistent()
-        
-        // Disable JavaScript and plugins
-        let preferences = WKPreferences()
-        preferences.javaScriptEnabled = false
-        preferences.javaEnabled = false
-        preferences.plugInsEnabled = false
-        configuration.preferences = preferences
-        
-        // Create a basic web view
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.customUserAgent = "DemoMode/1.0"
-        
-        // Load a demo message instead of the actual service URL
-        let html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    background: #f5f5f7;
-                    color: #333;
-        // Use immediate injection for ChatGPT and Copilot, delayed for others
-        if isChatGPT || isCopilot {
-            // For ChatGPT/Copilot, inject multiple times with different delays to ensure it works
-            let delays = [0.5, 1.0, 2.0, 5.0]
-            for delay in delays {
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                    self.injectPermissionFixer(webView)
-                    
-                    // For Copilot, also inject the special audio monitor
-                    if isCopilot {
-                        self.injectCopilotAudioCleanupScript(webView)
-                    }
-                }
-            }
-        } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                self.injectPermissionFixer(webView)
-            }
-        }
-        
-        // Track last usage time
-        UserDefaults.standard.set(Date(), forKey: "lastUsed_\(service.name)")
-        
-        return webView
+        // This function is intentionally removed in demo version
+        fatalError("This is a demo version. Full functionality not available.")
+    }
+    */
+    
+    // Demo function that doesn't actually work
+    private func demoCreateWebView() -> Never {
+        fatalError("This is a demo version. Full functionality not available.")
+    }
     }
     
     // MARK: - WKScriptMessageHandler

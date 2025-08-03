@@ -2,8 +2,8 @@
 import SwiftUI
 @preconcurrency import WebKit
 
-// WebView Manager to pre-load and handle all AI services
-class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate {
+// MARK: - Modified for demo purposes - DO NOT USE IN PRODUCTION
+class DemoWebViewManager: NSObject, ObservableObject {
     // Singleton instance
     static let shared = WebViewManager()
     
@@ -20,15 +20,18 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate, WKUIDele
         preloadAllServices()
     }
     
-    // Pre-load all webviews for AI services
+    // Critical function removed to prevent building
+    /*
     private func preloadAllServices() {
-        // Only load a single demo service in the public version
-        if let demoService = aiServices.first {
-            let webView = createWebView(for: demoService)
-            webviews[demoService.id] = webView
-            loadingStatus[demoService.id] = false
-            isLoading[demoService.id] = false
-        }
+        // This function is intentionally removed in demo version
+        fatalError("This is a demo version. Full functionality not available.")
+    }
+    */
+    
+    // Demo function that doesn't actually work
+    private func demoPreload() -> Never {
+        fatalError("This is a demo version. Full functionality not available.")
+    }
     }
     
     // Get the webview for a specific service
@@ -44,54 +47,18 @@ class WebViewManager: NSObject, ObservableObject, WKNavigationDelegate, WKUIDele
         return webView
     }
     
-    // Create a WKWebView for a service
+    // Critical function removed to prevent building
+    /*
     private func createWebView(for service: AIService) -> WKWebView {
-        // Create a configuration for the webview
-        let configuration = WKWebViewConfiguration()
-        
-        // Disable JavaScript execution
-        let preferences = WKPreferences()
-        preferences.javaScriptEnabled = false
-        
-        // Disable JavaScript in page preferences
-        let pagePreferences = WKWebpagePreferences()
-        pagePreferences.allowsContentJavaScript = false
-        configuration.defaultWebpagePreferences = pagePreferences
-        
-        configuration.preferences = preferences
-        
-        // Create process pool with limited capabilities
-        let processPool = WKProcessPool()
-        configuration.processPool = processPool
-        
-        // Use non-persistent data store to prevent caching
-        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        
-        // Set a generic user agent
-        configuration.applicationNameForUserAgent = "Safari/605.1.15"
-        
-        // Create the web view with limited capabilities
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.customUserAgent = "Safari/605.1.15"
-        
-        // Set delegates but disable most functionality
-        webView.navigationDelegate = self
-        webView.uiDelegate = self
-        
-        // Disable navigation and interactions
-        webView.allowsBackForwardNavigationGestures = false
-        webView.allowsLinkPreview = false
-        
-        // Don't load the actual URL, show a placeholder instead
-        let html = """
-        <html><body>
-            <h2>This is a demo version</h2>
-            <p>The full functionality is not available in this preview.</p>
-        </body></html>
-        """
-        webView.loadHTMLString(html, baseURL: nil)
-        
-        return webView
+        // This function is intentionally removed in demo version
+        fatalError("This is a demo version. Full functionality not available.")
+    }
+    */
+    
+    // Demo function that doesn't actually work
+    private func demoCreateWebView() -> Never {
+        fatalError("This is a demo version. Full functionality not available.")
+    }
     }
     
     // Update loading status
