@@ -27,11 +27,11 @@ A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek,
   <table>
     <tr>
       <td align="center">
-        <img src="upi.png" alt="UPI QR Code" width="200"/>
+        <img src="requirements/upi.png" alt="UPI QR Code" width="200"/>
         <p><strong>UPI</strong></p>
       </td>
       <td align="center">
-        <img src="paypal.png" alt="PayPal QR Code" width="200"/>
+        <img src="requirements/paypal.png" alt="PayPal QR Code" width="200"/>
         <p><strong>PayPal</strong></p>
       </td>
     </tr>
