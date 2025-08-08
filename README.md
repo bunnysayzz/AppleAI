@@ -2,7 +2,12 @@
 
 ## 🎉 Version 2.0 Now Available!
 
-A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek, and Grok into one streamlined interface, accessible anywhere with a global ⌘E shortcut.
+A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Copilot, DeepSeek, Grok, Mistral, Gemini, Pi, and more) + Custom API + Screenshot and Continue Chat into one streamlined interface, accessible anywhere with a global ⌘E shortcut. 
+<div align="center">
+  <a href="https://www.theappleai.tech/pricing" style="display: inline-block; background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1.1em; margin: 15px 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 8px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.1)';">
+    🚀 Upgrade to Pro Version
+  </a>
+</div>
 
 ## Download Now
 
@@ -18,28 +23,7 @@ A MacOS menu bar app that brings ChatGPT, Claude, Perplexity, Copilot, DeepSeek,
 2. Drag Apple AI.app to your Applications folder
 3. Launch the app from Applications or Spotlight
 
-<div align="center">
-  <hr>
-  <h2>⭐ Support Apple AI Development ⭐</h2>
-  <p>Apple AI is an independent project committed to making AI tools more accessible and efficient on macOS.</p>
-  <p><strong>If you find this tool valuable for your workflow, please consider supporting its continued development:</strong></p>
-  
-  <table>
-    <tr>
-      <td align="center">
-        <img src="requirements/upi.png" alt="UPI QR Code" width="200"/>
-        <p><strong>UPI</strong></p>
-      </td>
-      <td align="center">
-        <img src="requirements/paypal.png" alt="PayPal QR Code" width="200"/>
-        <p><strong>PayPal</strong></p>
-      </td>
-    </tr>
-  </table>
-  
-  <p><em>Your support enables us to bring regular updates, integrate new AI services, and improve existing features.<br>Every contribution helps maintain and evolve this project. Thank you for your support! ❤️</em></p>
-  <hr>
-</div>
+
 
 ## App Preview
 
