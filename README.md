@@ -27,7 +27,7 @@ A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Cop
 
 ## App Preview
 
-![Apple AI](interface.png)
+![Apple AI](requirements/interface.png)
 
 ## Overview
 
@@ -114,7 +114,7 @@ To access preferences, click the Apple AI menu bar icon and select "Preferences"
 - When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
 - This is a normal security measure to ensure the app is from a trusted source
    
-![Security Warning](privacyissues.png)
+![Security Warning](requirements/privacyissues.png)
 - If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
 
 
