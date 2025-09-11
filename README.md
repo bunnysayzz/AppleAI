@@ -1,141 +1,133 @@
-# Apple AI
+# Apple AI for macOS
 
-## 🎉 Version 2.0 Now Available!
+Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more — all from one place.
 
-A MacOS menu bar app that brings 10+ AI models (ChatGPT, Claude, Perplexity, Copilot, DeepSeek, Grok, Mistral, Gemini, Pi, and more) + Custom API + Screenshot and Continue Chat into one streamlined interface, accessible anywhere with a global ⌘E shortcut. 
+Now available as AppleAi Pro.
+
+**Current version: 2.0.1**
+
 <div align="center">
-  <a href="https://www.theappleai.tech/pricing" style="display: inline-block; background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1.1em; margin: 15px 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 8px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0, 0, 0, 0.1)';">
-    🚀 Upgrade to Pro Version
+  <a href="https://www.theappleai.tech/pricing" style="display:inline-block;background:#007aff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">
+    🚀 Upgrade to AppleAi Pro — Pricing
   </a>
 </div>
 
-## Download Now
-
-### Visit the Official Website
-
-- Go to [www.theappleai.tech](https://www.theappleai.tech) to download the latest version
-- **Version 2.0** features improved performance, enhanced UI, and exciting new features
-- Choose the appropriate download for your Mac (Universal DMG works for both Intel and Apple Silicon)
-
-### Quick Installation
-
-1. Open the downloaded DMG file
-2. Drag Apple AI.app to your Applications folder
-3. Launch the app from Applications or Spotlight
-
+## Download
+Choose either official site to get the latest DMG:
+- [Download from MacBunny](https://macbunny.co/appleai)
+- [Download from TheAppleAI](https://www.theappleai.tech)
 
 
 ## App Preview
-
 ![Apple AI](requirements/interface.png)
 
-## Overview
+## Features
+- Menu bar access with a compact, distraction‑free chat window
+- Quick model switching with icons for each service
+- Global shortcut to toggle the window: ⌘E
+- Always on Top mode to keep the chat visible while you work
+- Pinnable interface so the window stays put while multitasking
+- Instant access to all assistants from the menu bar
+- Persistent sessions per assistant across app restarts
+- Native macOS performance (Swift + SwiftUI, WKWebView)
+- Resource‑efficient compared to multiple browser tabs
+- Clean, modern UI that follows macOS design guidelines
+- Customizable themes: light/dark with accent color options
+- Smart history: search and reference past conversations
+- Privacy‑focused: all preferences and data stored locally by default
+- Full keyboard support: ⌘C, ⌘V, ⌘A work in all chat inputs
+- Open at Login option for quick startup
+- Simple, fast, and local — no auto‑updaters, no background daemons
 
-[![Apple AI](https://github.com/user-attachments/assets/25f7272c-8aef-445b-963f-c6a4637d2c63)](https://github.com/user-attachments/assets/25f7272c-8aef-445b-963f-c6a4637d2c63)
-
-Apple AI transforms how you interact with AI tools on your Mac by bringing together powerful AI assistants in one convenient menu bar application. Access it instantly from anywhere with the global ⌘E shortcut.
-
-Available AI services:
+## Supported services
 - ChatGPT
-- Claude 
-- GitHub Copilot
+- Claude
+- Copilot
 - Perplexity
 - DeepSeek
 - Grok
+- Mistral
+- Gemini
+- Pi
+- Blackbox
+- Meta
+- Zhipu AI
+- MCP Chat
+- askAppleAI (custom entry)
 
-Each assistant maintains its own persistent session, allowing you to seamlessly switch between them while preserving context and conversation history.
+The visibility of individual services can be toggled in Preferences.
 
-## Key Features
+## Installation
+1. Download the latest DMG `Apple_AI_Universal.dmg` from [MacBunny](https://macbunny.co/appleai)
+2. Open the DMG and drag “Apple AI” to Applications.
+3. Launch Apple AI. A star icon appears in the macOS menu bar.
 
-- **Global ⌘E Shortcut**: Toggle the app window from anywhere on your Mac with Command+E
-- **Always on Top Mode**: Keep the window visible even when clicking outside
-- **Pinnable Interface**: Pin the AI interface to keep it accessible while working in other applications
-- **Instant Menu Bar Access**: One-click access to all AI assistants from the menu bar
-- **Native Performance**: Built as a native macOS app for optimal speed and reliability
-- **Persistent Sessions**: Maintains context across app restarts
-- **Resource Efficient**: Lightweight compared to multiple browser tabs
-- **Clean Interface**: Modern, distraction-free design following macOS guidelines
-- **Customizable Themes**: Light and dark mode with accent color options
-- **Smart History**: Search and reference past conversations
-- **Privacy Focused**: All data stored locally by default
-- **Full Keyboard Support**: Copy, paste, and select all functionality in all AI chat inputs
-
-## Keyboard Shortcuts
-
-Apple AI provides system-wide keyboard shortcuts for quick access:
-
-- **⌘E**: Toggle Apple AI window open/closed (works globally across all applications)
-- **Copy/Paste/Select All**: Standard keyboard shortcuts (⌘C, ⌘V, ⌘A) work in all AI chat input fields
-
-The global ⌘E shortcut works from any application, giving you instant access to AI assistance whenever you need it.
-
-## Preferences
-
-Apple AI offers several customization options:
-
-- **Always on Top**: When enabled, the app window stays visible even when clicking outside it
-- **Open at Login**: Automatically start Apple AI when you log in
-- **Keyboard Shortcuts**: View the configured keyboard shortcuts
-
-To access preferences, click the Apple AI menu bar icon and select "Preferences".
-
-## Usage Tips
-
-- Use ⌘E to quickly show/hide the Apple AI window from any application
-- Enable "Always on Top" when you need to reference AI responses while working in another app
-- Pin the interface to keep it accessible at all times while working
-- Pin the app to your menu bar for easy access
-- Use standard keyboard shortcuts (⌘C, ⌘V, ⌘A) in all AI chat input fields
-
-## Perfect For
-
-- **Developers**: Quick access to coding assistants like GitHub Copilot
-- **Writers**: Seamless writing help from ChatGPT and Claude
-- **Researchers**: Efficient fact-checking with Perplexity
-- **Knowledge Workers**: Rapid answers from multiple AI sources
-- **Creative Professionals**: Instant creative inspiration
-- **Students**: Research assistance and learning support
-- **Business Users**: Quick market research and analysis
-- **Data Scientists**: Rapid prototyping and code generation
-
-## Technical Details
-
-- **Architecture**: Native macOS app built for both Apple Silicon and Intel processors
-- **Framework**: Developed using Swift and SwiftUI for optimal performance and modern UI
-- **Performance**: Optimized for minimal CPU, memory, and battery usage
-- **Updates**: Regular maintenance and feature updates via the integrated update system
-- **Web Technologies**: Uses WKWebView for efficient rendering of AI service interfaces
-- **Data Storage**: All data stored locally in standard macOS app locations
-- **Support**: Dedicated support and active development community
-
-## Installation Notes
-
+Tip: If macOS warns that the app is from an unidentified developer, open System Settings → Privacy & Security and click “Open Anyway”.
 ### First Launch Security
-- When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
+- When installing Apple AI, you may encounter a security warning due to macOS's 
+Gatekeeper feature
 - This is a normal security measure to ensure the app is from a trusted source
    
 ![Security Warning](requirements/privacyissues.png)
-- If you see a security warning, go to System Settings > Privacy & Security and click "Open Anyway"
+- If you see a security warning, go to System Settings > Privacy & Security and click 
+"Open Anyway"
 
+## Usage
+- Click the menu bar icon to open the compact chat window.
+- Press ⌘E anywhere to toggle the window quickly.
+- Right‑click the menu bar icon for a quick menu:
+  - Open Apple AI
+  - Version 2.0.1
+  - Visible services (click to jump directly)
+  - Preferences
+  - GitHub / More Apps
+  - Quit (⌘Q)
 
-## Security Considerations
+## Preferences
+Open Preferences from the menu:
+- Always on top: Keep the chat window above other apps.
+- Open at Login: Start Apple AI automatically when you log in.
+- Models: Show/hide the services you want in the quick menu.
+- Keyboard Shortcuts: Toggle Window is fixed to ⌘E for reliability.
+- About: Shows the app version and helpful links.
 
-Apple AI is designed with privacy in mind:
-- The app simply provides a native interface to web-based AI services
-- No data is sent to any servers beyond what you directly input to each AI service
-- All preferences and settings are stored locally on your Mac
+## Keyboard Shortcuts
+- ⌘E: Toggle Apple AI window open/closed (works globally across apps)
+- Standard text editing in chat inputs: ⌘C, ⌘V, ⌘A
+
+## Privacy
+- Apple AI runs entirely on your Mac. It opens each service’s official website in a WKWebView.
+- Your chats and settings remain on your device. We do not collect your data.
+- Microphone and screen access are only requested when you use features inside those web apps (e.g., voice chat or screenshot uploads).
 
 ## Compatibility
+- macOS Monterey (12.0) and later
+- Apple Silicon (M1/M2/M3) and Intel Macs
+- Universal DMG recommended for best compatibility
 
-### macOS Requirements
-- Apple AI works on macOS Monterey (12.0) and later
-- Compatible with both Apple Silicon (M1/M2/M3) and Intel Macs
-- For Intel Macs, the Universal DMG is recommended for best performance
+## Build it yourself
+Requirements:
+- Xcode (target macOS 12+)
+- Optional: Homebrew (for tools like `create-dmg` if you want to package a DMG)
 
-### Intel Mac Users
-If you're using an Intel Mac and encounter any issues:
-1. Download the "Apple_AI_Universal.dmg" from [www.theappleai.tech](https://www.theappleai.tech)
-2. Ensure Rosetta 2 is installed (your Mac will prompt you if needed)
+Build steps (Xcode):
+1. Open the project in Xcode.
+2. Select the `AppleAI` scheme and set your desired destination (My Mac).
+3. Product → Build (⌘B) or Product → Archive to create a release build.
+4. To create a DMG, you can use a tool like `create-dmg` or distribute the `.app` directly.
 
-For detailed instructions, see the INTEL_MAC_USERS_README.txt included with the download.
+## Troubleshooting
+- “App is damaged and can’t be opened”: run `xattr -cr "/Applications/Apple AI.app"` or use System Settings → Privacy & Security → Open Anyway.
+- Global shortcut not working: ensure no other app uses ⌘E globally.
+- Chat not accepting input: click once inside the web view to focus, or toggle the window with ⌘E.
+
+## License
+This repository is provided for personal use. See source headers for details.
+
+## Credits
+- Designed and developed by MacBunny.
+- Icons for services belong to their respective owners.
+
+—
+If you have suggestions or run into issues, open an issue on GitHub or reach out via the links in Preferences.
 
