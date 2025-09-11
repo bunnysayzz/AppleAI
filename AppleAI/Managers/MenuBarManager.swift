@@ -112,7 +112,7 @@ class MenuBarManager: NSObject, NSMenuDelegate, NSWindowDelegate {
         
         // Open main window - adding Command+E keyboard shortcut
         let openItem = NSMenuItem(
-            title: "Open Apple AI",
+            title: "Open AppleAi Pro",
             action: #selector(togglePopupWindow),
             keyEquivalent: "e"  // "e" for Command+E
         )
@@ -282,7 +282,7 @@ class MenuBarManager: NSObject, NSMenuDelegate, NSWindowDelegate {
         )
         
         // Configure the window
-        window.title = "Apple AI"
+        window.title = "AppleAi Pro"
         window.isReleasedWhenClosed = false // Important: Don't release window when closed
         
         // Set initial window level based on preference
@@ -445,7 +445,7 @@ class MenuBarManager: NSObject, NSMenuDelegate, NSWindowDelegate {
             )
             
             // Configure the window
-            window.title = "Apple AI"
+            window.title = "AppleAi Pro"
             window.isReleasedWhenClosed = false // Important: Don't release window when closed
             
             // Set initial window level based on preference

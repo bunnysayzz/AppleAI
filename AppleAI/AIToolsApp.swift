@@ -28,6 +28,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarManager = MenuBarManager()
         menuBarManager.setup()
         
+        // Initialize Pro notification manager
+        _ = ProNotificationManager.shared
+        
         // Setup application main menu with keyboard shortcut support
         setupMainMenu()
         
@@ -328,7 +331,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Helper to get the current active web view
     private func getCurrentActiveWebView() -> WKWebView? {
         // Find the main window
-        guard let mainWindow = NSApp.windows.first(where: { $0.title == "Apple AI" }) else {
+        guard let mainWindow = NSApp.windows.first(where: { $0.title == "AppleAi Pro" }) else {
             return nil
         }
         
@@ -567,11 +570,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Application menu
         let appMenu = NSMenu()
-        let appMenuItem = NSMenuItem(title: "Apple AI", action: nil, keyEquivalent: "")
+        let appMenuItem = NSMenuItem(title: "AppleAi Pro", action: nil, keyEquivalent: "")
         appMenuItem.submenu = appMenu
         
         // Add about item
-        let aboutItem = NSMenuItem(title: "About Apple AI", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: "About AppleAi Pro", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         aboutItem.target = NSApp
         appMenu.addItem(aboutItem)
         
@@ -585,7 +588,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(NSMenuItem.separator())
         
         // Add quit item
-        let quitItem = NSMenuItem(title: "Quit Apple AI", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit AppleAi Pro", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quitItem.target = NSApp
         appMenu.addItem(quitItem)
         

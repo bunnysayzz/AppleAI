@@ -11,13 +11,13 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Apple AI</string>
+    <string>AppleAi Pro</string>
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>2.0.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>201</string>
     <key>LSMinimumSystemVersion</key>
     <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>LSUIElement</key>
@@ -28,8 +28,8 @@
         <true/>
     </dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Apple AI requires microphone access to enable voice chat features in AI platforms like ChatGPT and Copilot</string>
+    <string>AppleAi Pro requires microphone access to enable voice chat features in AI platforms like ChatGPT and Copilot</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2024. All rights reserved.</string>
+    <string>Copyright © 2024 MacBunny. All rights reserved.</string>
 </dict>
 </plist> 

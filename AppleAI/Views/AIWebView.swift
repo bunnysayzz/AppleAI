@@ -59,7 +59,7 @@ class WebViewCache: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelega
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 alert.messageText = "Microphone Access Required"
-                alert.informativeText = "Apple AI needs microphone access for voice chat features. Please enable it in System Settings > Privacy & Security > Microphone."
+                alert.informativeText = "AppleAi Pro needs microphone access for voice chat features. Please enable it in System Settings > Privacy & Security > Microphone."
                 alert.addButton(withTitle: "Open Settings")
                 alert.addButton(withTitle: "Cancel")
                 
