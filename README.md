@@ -19,7 +19,28 @@ Choose either official site to get the latest DMG:
 
 
 ## App Preview
-![Apple AI](requirements/interface.png)
+<div align="center">
+  <img src="requirements/interface.png" alt="Apple AI Interface" width="100%">
+</div>
+
+## Screenshots
+
+<div align="center">
+  <img src="requirements/general.png" alt="General Settings" width="49%">
+  <img src="requirements/preferences.png" alt="Preferences" width="49%">
+</div>
+
+<div align="center">
+  <img src="requirements/Changeshortcuts.png" alt="Change Shortcuts" width="49%">
+  <img src="requirements/CustomApiChat.png" alt="Custom API Chat" width="49%">
+</div>
+
+
+
+<div align="center">
+  <img src="requirements/screenshot.png" alt="Screenshot Feature" width="49%">
+ <img src="requirements/moreai.png" alt="More ai models" width="49%">
+</div>
 
 ## Features
 - Menu bar access with a compact, distraction‑free chat window
@@ -62,26 +83,19 @@ The visibility of individual services can be toggled in Preferences.
 2. Open the DMG and drag “Apple AI” to Applications.
 3. Launch Apple AI. A star icon appears in the macOS menu bar.
 
-Tip: If macOS warns that the app is from an unidentified developer, open System Settings → Privacy & Security and click “Open Anyway”.
+Tip: If macOS warns that the app is from an unidentified developer, open System Settings → Privacy & Security and click "Open Anyway".
+
 ### First Launch Security
-- When installing Apple AI, you may encounter a security warning due to macOS's 
-Gatekeeper feature
+- When installing Apple AI, you may encounter a security warning due to macOS's Gatekeeper feature
+![Security Warning](requirements/gatekeeperwarning.png)
 - This is a normal security measure to ensure the app is from a trusted source
    
-![Security Warning](requirements/privacyissues.png)
+
 - If you see a security warning, go to System Settings > Privacy & Security and click 
 "Open Anyway"
+![Open Anyway](requirements/privacyissues.png)
 
-## Usage
-- Click the menu bar icon to open the compact chat window.
-- Press ⌘E anywhere to toggle the window quickly.
-- Right‑click the menu bar icon for a quick menu:
-  - Open Apple AI
-  - Version 2.0.1
-  - Visible services (click to jump directly)
-  - Preferences
-  - GitHub / More Apps
-  - Quit (⌘Q)
+
 
 ## Preferences
 Open Preferences from the menu:
@@ -105,16 +119,8 @@ Open Preferences from the menu:
 - Apple Silicon (M1/M2/M3) and Intel Macs
 - Universal DMG recommended for best compatibility
 
-## Build it yourself
-Requirements:
-- Xcode (target macOS 12+)
-- Optional: Homebrew (for tools like `create-dmg` if you want to package a DMG)
 
-Build steps (Xcode):
-1. Open the project in Xcode.
-2. Select the `AppleAI` scheme and set your desired destination (My Mac).
-3. Product → Build (⌘B) or Product → Archive to create a release build.
-4. To create a DMG, you can use a tool like `create-dmg` or distribute the `.app` directly.
+
 
 ## Troubleshooting
 - “App is damaged and can’t be opened”: run `xattr -cr "/Applications/Apple AI.app"` or use System Settings → Privacy & Security → Open Anyway.
