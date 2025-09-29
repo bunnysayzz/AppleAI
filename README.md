@@ -23,6 +23,14 @@ Choose either official site to get the latest DMG:
   <img src="requirements/interface.png" alt="Apple AI Interface" width="100%">
 </div>
 
+## Video Demo
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=w8iF1g3psdA">
+    <img src="https://img.youtube.com/vi/w8iF1g3psdA/maxresdefault.jpg" alt="Watch Apple AI Demo" width="80%">
+  </a>
+  <p><em>Click to watch the demo video</em></p>
+</div>
+
 ## Screenshots
 
 <div align="center">
@@ -32,7 +40,6 @@ Choose either official site to get the latest DMG:
 
 <div align="center">
   <img src="requirements/Changeshortcuts.png" alt="Change Shortcuts" width="49%">
-  <img src="requirements/CustomApiChat.png" alt="Custom API Chat" width="49%">
 </div>
 
 
