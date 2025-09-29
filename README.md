@@ -2,10 +2,7 @@
 
 Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more — all from one place.
 
-Now available as AppleAi Pro.
-
-**Current version: 2.0.1**
-
+Now available as AppleAi Pro
 <div align="center">
   <a href="https://www.theappleai.tech/pricing" style="display:inline-block;background:#007aff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">
     🚀 Upgrade to AppleAi Pro — Pricing
