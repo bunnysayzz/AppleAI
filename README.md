@@ -4,7 +4,7 @@ Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your f
 
 Now available as AppleAi Pro
 <div align="center">
-  <a href="https://www.theappleai.tech/pricing" style="display:inline-block;background:#007aff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">
+  <a href="https://macbunny.co/appleai" style="display:inline-block;background:#007aff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">
     🚀 Upgrade to AppleAi Pro — Pricing
   </a>
 </div>
@@ -12,7 +12,6 @@ Now available as AppleAi Pro
 ## Download
 Choose either official site to get the latest DMG:
 - [Download from MacBunny](https://macbunny.co/appleai)
-- [Download from TheAppleAI](https://www.theappleai.tech)
 
 
 ## App Preview
