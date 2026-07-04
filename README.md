@@ -12,6 +12,8 @@ Now available as AppleAi Pro
 ## Download
 Choose either official site to get the latest DMG:
 - [Download from MacBunny](https://macbunny.co/appleai)
+- [Download from TheAppleAi](https://theappleai.vercel.app/)
+
 
 
 ## App Preview
