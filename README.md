@@ -1,18 +1,16 @@
-# Apple AI for macOS
+# Apple AI for macOS — ⛔ Discontinued (moved to Utilix)
+
+> **AppleAI is no longer maintained.** The name is retired, and every feature now lives in [**Utilix**](https://github.com/bunnysayzz/utilix) — the same menu-bar AI chat plus 25+ utilities (command palette, clipboard, OCR, translate, window snap, calendar, AI chat with your own API key), with automatic in-app updates.
+>
+> - **Download Utilix:** [GitHub Releases](https://github.com/bunnysayzz/utilix/releases) · [itch.io](https://bunnysayzz.itch.io/utilix)
+> - **Bug reports & feature requests:** [Utilix Issues](https://github.com/bunnysayzz/utilix/issues) (in-app: Settings → About → Help & Feedback)
+>
+> This repository stays up as an archive — the last AppleAI release below still works, but no new versions will ship here.
 
 Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more — all from one place.
 
-Now available as AppleAi Pro
-<div align="center">
-  <a href="https://macbunny.co/appleai" style="display:inline-block;background:#007aff;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">
-    🚀 Upgrade to AppleAi Pro — Pricing
-  </a>
-</div>
-
 ## Download
-Choose either official site to get the latest DMG:
-- [Download from MacBunny](https://macbunny.co/appleai)
-- [Download from TheAppleAi](https://theappleai.vercel.app/)
+The last AppleAI release still works — get it from this repo's [Releases page](../../releases). For everything new, get [Utilix](https://github.com/bunnysayzz/utilix/releases) instead.
 
 
 
@@ -83,8 +81,8 @@ Choose either official site to get the latest DMG:
 
 The visibility of individual services can be toggled in Preferences.
 
-## Installation
-1. Download the latest DMG `Apple_AI_Universal.dmg` from [MacBunny](https://macbunny.co/appleai)
+## Installation (archived)
+1. Download the last DMG `Apple_AI_Universal.dmg` from this repo's [Releases page](../../releases)
 2. Open the DMG and drag “Apple AI” to Applications.
 3. Launch Apple AI. A star icon appears in the macOS menu bar.
 
@@ -136,9 +134,9 @@ Open Preferences from the menu:
 This repository is provided for personal use. See source headers for details.
 
 ## Credits
-- Designed and developed by MacBunny.
+- Designed and developed by bunnysayzz.
 - Icons for services belong to their respective owners.
 
 —
-If you have suggestions or run into issues, open an issue on GitHub or reach out via the links in Preferences.
+AppleAI is archived — for suggestions or issues, use [Utilix Issues](https://github.com/bunnysayzz/utilix/issues).
 
