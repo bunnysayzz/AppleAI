@@ -67,9 +67,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          HAVE="$(gh release view version2.0 --repo bunnysayzz/AppleAI --json assets \
-            --jq --arg a '${{ steps.utilix.outputs.asset }}' '[.assets[] | select(.name == $a)] | length')"
-          if [ "$HAVE" != "0" ]; then
+          # Fixed-string match (no jq --arg: older gh builds reject it
+          # inside `release view`, failing the step with "at most 1 arg").
+          if gh release view version2.0 --repo bunnysayzz/AppleAI --json assets \
+              --jq '.assets[].name' | grep -qxF -- '${{ steps.utilix.outputs.asset }}'; then
             echo "present=true" >> "$GITHUB_OUTPUT"
             echo "Already present: ${{ steps.utilix.outputs.asset }} — nothing to do."
           else
