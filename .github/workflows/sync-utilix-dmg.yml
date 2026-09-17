@@ -1,0 +1,114 @@
+# Syncs the newest Utilix DMG into this repo's `version2.0` release.
+#
+# Why: AppleAI is discontinued — every feature lives in Utilix
+# (bunnysayzz/utilix). This repo's Latest release keeps working as a
+# discovery surface: AppleAI's own files stay untouched, and the current
+# Utilix DMG sits next to them. No source, no rebuild, no release-notes
+# edits — asset-only sync.
+#
+# Triggers: daily cron (03:00 UTC) + manual `workflow_dispatch` (optional
+# `version` input, e.g. `v1.0.25`, to pin instead of latest).
+# Idempotent: exits 0 when the exact asset is already present.
+# Replacement: older `Utilix-*.dmg` assets are deleted; AppleAI's own
+# files (`Apple_AI_Universal.dmg`, guide, anything non-Utilix) are never
+# matched and never touched.
+#
+# Caveat: GitHub auto-disables scheduled workflows after 60 days of repo
+# inactivity (expected on an archived repo). Manual dispatch always works;
+# any push re-enables the schedule.
+name: Sync Utilix DMG
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Utilix tag to sync (default: latest release)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-utilix-dmg
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Utilix version + DMG
+        id: utilix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -n "$WANT" ]; then
+            TAG="$WANT"
+          else
+            TAG="$(gh release view --repo bunnysayzz/utilix --json tagName --jq .tagName)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          ASSET="$(gh release view "$TAG" --repo bunnysayzz/utilix --json assets \
+            --jq '[.assets[] | select(.name | test("^Utilix-.*\\.dmg$"))][0].name')"
+          if [ -z "$ASSET" ] || [ "$ASSET" = "null" ]; then
+            echo "::error::No Utilix-*.dmg on bunnysayzz/utilix@$TAG"
+            exit 1
+          fi
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+          echo "Syncing $ASSET from $TAG"
+
+      - name: Skip when already present
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HAVE="$(gh release view version2.0 --repo bunnysayzz/AppleAI --json assets \
+            --jq --arg a '${{ steps.utilix.outputs.asset }}' '[.assets[] | select(.name == $a)] | length')"
+          if [ "$HAVE" != "0" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "Already present: ${{ steps.utilix.outputs.asset }} — nothing to do."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download Utilix DMG
+        if: steps.check.outputs.present == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/utilix-sync
+          gh release download '${{ steps.utilix.outputs.tag }}' --repo bunnysayzz/utilix \
+            --pattern '${{ steps.utilix.outputs.asset }}' --dir /tmp/utilix-sync
+          ls -la /tmp/utilix-sync/
+
+      - name: Remove superseded Utilix DMGs (keep AppleAI files)
+        if: steps.check.outputs.present == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CURRENT='${{ steps.utilix.outputs.asset }}'
+          for name in $(gh release view version2.0 --repo bunnysayzz/AppleAI --json assets \
+              --jq '.assets[] | select(.name | test("^Utilix-.*\\.dmg$")) | .name'); do
+            if [ "$name" != "$CURRENT" ]; then
+              echo "Removing superseded: $name"
+              gh release delete-asset version2.0 "$name" --repo bunnysayzz/AppleAI --yes
+            fi
+          done
+
+      - name: Upload to AppleAI release (notes untouched)
+        if: steps.check.outputs.present == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # `upload` appends the asset only — release notes/body are never modified.
+          gh release upload version2.0 "/tmp/utilix-sync/${{ steps.utilix.outputs.asset }}" \
+            --repo bunnysayzz/AppleAI
+          echo "Uploaded ${{ steps.utilix.outputs.asset }} to AppleAI version2.0"
