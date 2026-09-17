@@ -1,6 +1,6 @@
-# ⛔ Apple AI is discontinued — use [Utilix](https://github.com/bunnysayzz/utilix) instead
+# ⛔ Apple AI is discontinued: use [Utilix](https://github.com/bunnysayzz/utilix) instead
 
-> **AppleAI is no longer maintained — the name is retired, and every feature now lives in [Utilix](https://github.com/bunnysayzz/utilix):** the same menu-bar AI chat, plus 25+ utilities (⌘Space command palette, clipboard, OCR, translate, window snap, calendar, AI chat with your own API key), with automatic in-app updates.
+> **AppleAI is no longer maintained. The name is retired, and every feature now lives in [Utilix](https://github.com/bunnysayzz/utilix):** the same menu-bar AI chat, plus 25+ utilities (⌘Space command palette, clipboard, OCR, translate, window snap, calendar, AI chat with your own API key), with automatic in-app updates.
 >
 > | | AppleAI (this repo, archived) | [Utilix](https://github.com/bunnysayzz/utilix) (active) |
 > |---|---|---|
@@ -10,16 +10,16 @@
 >
 > **Get Utilix:** [GitHub Releases](https://github.com/bunnysayzz/utilix/releases) · [itch.io](https://bunnysayzz.itch.io/utilix)
 >
-> This repository stays up as an archive — the last AppleAI release below still works, but no new versions will ship here.
+> This repository stays up as an archive. The last AppleAI release below still works, but no new versions will ship here.
 
 ## Archive (AppleAI history)
 
 Everything below describes the archived AppleAI app, kept for reference.
 
-Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more — all from one place.
+Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more. All from one place.
 
 ## Download
-The last AppleAI release still works — get it from this repo's [Releases page](../../releases). For everything new, get [Utilix](https://github.com/bunnysayzz/utilix/releases) instead.
+The last AppleAI release still works. Get it from this repo's [Releases page](../../releases). For everything new, get [Utilix](https://github.com/bunnysayzz/utilix/releases) instead.
 
 
 
@@ -70,7 +70,7 @@ The last AppleAI release still works — get it from this repo's [Releases page]
 - Privacy‑focused: all preferences and data stored locally by default
 - Full keyboard support: ⌘C, ⌘V, ⌘A work in all chat inputs
 - Open at Login option for quick startup
-- Simple, fast, and local — no auto‑updaters, no background daemons
+- Simple, fast, and local. No auto‑updaters, no background daemons
 
 ## Supported services
 - ChatGPT
@@ -146,6 +146,6 @@ This repository is provided for personal use. See source headers for details.
 - Designed and developed by bunnysayzz.
 - Icons for services belong to their respective owners.
 
-—
-AppleAI is archived — for suggestions or issues, use [Utilix Issues](https://github.com/bunnysayzz/utilix/issues).
+---
+AppleAI is archived. For suggestions or issues, use [Utilix Issues](https://github.com/bunnysayzz/utilix/issues).
 

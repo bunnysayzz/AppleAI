@@ -1,10 +1,10 @@
 # Syncs the newest Utilix DMG into this repo's `version2.0` release.
 #
-# Why: AppleAI is discontinued — every feature lives in Utilix
+# Why: AppleAI is discontinued. Every feature lives in Utilix
 # (bunnysayzz/utilix). This repo's Latest release keeps working as a
 # discovery surface: AppleAI's own files stay untouched, and the current
 # Utilix DMG sits next to them. No source, no rebuild, no release-notes
-# edits — asset-only sync.
+# edits. Asset-only sync.
 #
 # Triggers: daily cron (03:00 UTC) + manual `workflow_dispatch` (optional
 # `version` input, e.g. `v1.0.25`, to pin instead of latest).
@@ -72,7 +72,7 @@ jobs:
           if gh release view version2.0 --repo bunnysayzz/AppleAI --json assets \
               --jq '.assets[].name' | grep -qxF -- '${{ steps.utilix.outputs.asset }}'; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Already present: ${{ steps.utilix.outputs.asset }} — nothing to do."
+            echo "Already present: ${{ steps.utilix.outputs.asset }}: nothing to do."
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
@@ -109,7 +109,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # `upload` appends the asset only — release notes/body are never modified.
+          # `upload` appends the asset only. Release notes/body are never modified.
           gh release upload version2.0 "/tmp/utilix-sync/${{ steps.utilix.outputs.asset }}" \
             --repo bunnysayzz/AppleAI
           echo "Uploaded ${{ steps.utilix.outputs.asset }} to AppleAI version2.0"
