@@ -1,11 +1,20 @@
-# Apple AI for macOS — ⛔ Discontinued (moved to Utilix)
+# ⛔ Apple AI is discontinued — use [Utilix](https://github.com/bunnysayzz/utilix) instead
 
-> **AppleAI is no longer maintained.** The name is retired, and every feature now lives in [**Utilix**](https://github.com/bunnysayzz/utilix) — the same menu-bar AI chat plus 25+ utilities (command palette, clipboard, OCR, translate, window snap, calendar, AI chat with your own API key), with automatic in-app updates.
+> **AppleAI is no longer maintained — the name is retired, and every feature now lives in [Utilix](https://github.com/bunnysayzz/utilix):** the same menu-bar AI chat, plus 25+ utilities (⌘Space command palette, clipboard, OCR, translate, window snap, calendar, AI chat with your own API key), with automatic in-app updates.
 >
-> - **Download Utilix:** [GitHub Releases](https://github.com/bunnysayzz/utilix/releases) · [itch.io](https://bunnysayzz.itch.io/utilix)
-> - **Bug reports & feature requests:** [Utilix Issues](https://github.com/bunnysayzz/utilix/issues) (in-app: Settings → About → Help & Feedback)
+> | | AppleAI (this repo, archived) | [Utilix](https://github.com/bunnysayzz/utilix) (active) |
+> |---|---|---|
+> | AI chat (ChatGPT, Claude, Gemini…) | ✅ frozen as-is | ✅ + Web AI, no key needed |
+> | New versions | ❌ none, ever | ✅ in-app, signed |
+> | Bug reports & ideas | ❌ closed | ✅ [Issues](https://github.com/bunnysayzz/utilix/issues) + in-app form |
+>
+> **Get Utilix:** [GitHub Releases](https://github.com/bunnysayzz/utilix/releases) · [itch.io](https://bunnysayzz.itch.io/utilix)
 >
 > This repository stays up as an archive — the last AppleAI release below still works, but no new versions will ship here.
+
+## Archive (AppleAI history)
+
+Everything below describes the archived AppleAI app, kept for reference.
 
 Apple AI is a lightweight, privacy‑minded macOS menu bar app that keeps your favorite AI assistants one keystroke away. Open a compact, always‑on‑top chat window and jump between services like ChatGPT, Claude, Copilot, Perplexity, Gemini, and more — all from one place.
 
